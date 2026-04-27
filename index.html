@@ -6,6 +6,7 @@
   <title>⚽ WC 2026 Poule · Sam Media</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -34,6 +35,14 @@
         <div class="avatar" id="header-avatar">?</div>
         <span id="header-name">Sign in</span>
       </button>
+      <!-- User dropdown menu -->
+      <div class="user-menu" id="user-menu" style="display:none">
+        <div class="user-menu-info">
+          <div class="user-menu-name" id="user-menu-name"></div>
+          <div class="user-menu-email" id="user-menu-email"></div>
+        </div>
+        <button class="user-menu-item danger" onclick="signOut()">Sign out</button>
+      </div>
     </div>
   </div>
 </header>
@@ -204,26 +213,33 @@
 <div id="modal-overlay">
   <div class="modal">
     <div class="modal-logo">
-      <img src="assets/SAMMEDIA_white.svg" alt="Sam Media"
-           onerror="this.style.display='none'" />
+      <img src="assets/SAMMEDIA_white.svg" alt="Sam Media" onerror="this.style.display='none'" />
       <div class="modal-logo-text">⚽ WC 2026 Poule</div>
-      <div class="modal-logo-sub">Sam Media · 95 participants</div>
+      <div class="modal-logo-sub">Sam Media internal · 95 players</div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Your Name</label>
-      <input class="form-input" id="login-name" type="text"
-             placeholder="e.g. Jorg van Gaal" autocomplete="name" />
+    <!-- Google SSO block (shown when CLIENT_ID is configured) -->
+    <div class="sso-block" id="sso-block">
+      <p class="sso-desc">Sign in with your Sam Media Google account to join and save your predictions.</p>
+      <div id="google-signin-btn" class="google-btn-wrap"></div>
+      <p class="sso-hint">Only @sam-media.com accounts are accepted</p>
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Pick a colour</label>
-      <div class="color-picker" id="color-picker"></div>
+    <!-- Fallback manual login (shown when CLIENT_ID not yet set) -->
+    <div id="manual-login-block" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Your Name</label>
+        <input class="form-input" id="login-name" type="text"
+               placeholder="e.g. Jorg van Gaal" autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Pick a colour</label>
+        <div class="color-picker" id="color-picker"></div>
+      </div>
+      <button class="btn btn-primary" id="login-btn" style="width:100%;justify-content:center;padding:13px">
+        Join the Poule 🚀
+      </button>
     </div>
-
-    <button class="btn btn-primary" id="login-btn" style="width:100%;justify-content:center;padding:13px">
-      Join the Poule 🚀
-    </button>
   </div>
 </div>
 

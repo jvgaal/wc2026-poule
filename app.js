@@ -4,14 +4,11 @@
 //  CONFIG  —  update BACKEND_URL after deploying Apps Script
 // ══════════════════════════════════════════════════════
 const CONFIG = {
-  BACKEND_URL:    'https://script.google.com/a/macros/sam-media.com/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',   // ← replace after Step 2 in SETUP.md
-  ADMIN_PASSWORD: 'worldcup2026',                 // ← change this!
+  BACKEND_URL:      'https://script.google.com/a/macros/sam-media.com/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',
+  ADMIN_PASSWORD:   'worldcup2026',
+  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID',      // ← paste from Google Cloud Console
 };
 
-const AVATAR_COLORS = [
-  '#7DC242','#3B82F6','#EC4899','#F97316','#8B5CF6',
-  '#06B6D4','#EF4444','#10B981','#F59E0B','#6366F1',
-];
 
 const MAX_POSSIBLE = 358; // 216 group + 93 knockout + 49 bonus
 
@@ -43,15 +40,16 @@ const S = {
 // ══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
   loadLocal();
-  buildColorPicker();
 
   if (S.user) {
     closeModal();
     updateHeaderUser();
+    document.getElementById('admin-tab').style.display = '';
   } else {
     openModal();
   }
 
+  initGoogleSSO();   // set up SSO or show fallback
   bindNav();
   bindSubTabs();
   bindModal();
@@ -77,6 +75,8 @@ function loadLocal() {
     S.koPredictions    = JSON.parse(localStorage.getItem('wc26_ko'))      || {};
     S.results          = JSON.parse(localStorage.getItem('wc26_results')) || {};
     S.config           = JSON.parse(localStorage.getItem('wc26_config'))  || { locked: {}, prizes: { p1:'TBA', p2:'TBA', p3:'TBA' } };
+    // Clear legacy users who signed in before SSO (they'll re-auth via Google)
+    if (S.user && !S.user.email) S.user = null;
   } catch(e) { /* corrupted data — start fresh */ }
 }
 
@@ -131,7 +131,7 @@ async function syncRemote() {
     form.append('action',  'sync');
     form.append('userId',  S.user.id);
     form.append('name',    S.user.name);
-    form.append('color',   S.user.color);
+    form.append('color',   S.user.picture || S.user.color || '#7DC242');
     form.append('group',   JSON.stringify(S.predictions));
     form.append('bonus',   JSON.stringify(S.bonusPredictions));
     form.append('ko',      JSON.stringify(S.koPredictions));
@@ -1148,9 +1148,94 @@ function exportCSV() {
 }
 
 // ══════════════════════════════════════════════════════
+//  GOOGLE SSO
+// ══════════════════════════════════════════════════════
+function initGoogleSSO() {
+  const hasClientId = CONFIG.GOOGLE_CLIENT_ID && !CONFIG.GOOGLE_CLIENT_ID.startsWith('YOUR_');
+
+  if (!hasClientId) {
+    // Client ID not configured — fall back to manual name/colour login
+    document.getElementById('sso-block').style.display = 'none';
+    document.getElementById('manual-login-block').style.display = '';
+    buildColorPicker();
+    return;
+  }
+
+  // Wait for the GSI library to load then render the button
+  const tryInit = () => {
+    if (typeof google === 'undefined') { setTimeout(tryInit, 150); return; }
+    google.accounts.id.initialize({
+      client_id:   CONFIG.GOOGLE_CLIENT_ID,
+      callback:    handleGoogleSignIn,
+      hd:          'sam-media.com',   // restrict to sam-media.com workspace
+      auto_select: false,
+    });
+    const btnEl = document.getElementById('google-signin-btn');
+    if (btnEl) {
+      google.accounts.id.renderButton(btnEl, {
+        theme:          'filled_black',
+        size:           'large',
+        shape:          'rectangular',
+        text:           'signin_with',
+        logo_alignment: 'left',
+        width:          280,
+      });
+    }
+  };
+  tryInit();
+}
+
+window.handleGoogleSignIn = function(response) {
+  try {
+    // Decode JWT payload (no library needed — just base64url decode)
+    const b64 = response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(b64));
+
+    if (!payload.email?.endsWith('@sam-media.com')) {
+      showToast('Please use your @sam-media.com Google account', 'error');
+      return;
+    }
+
+    S.user = {
+      id:      `g_${payload.sub}`,
+      name:    payload.name,
+      email:   payload.email,
+      picture: payload.picture || '',
+      color:   '#7DC242',
+    };
+
+    saveLocal();
+    closeModal();
+    updateHeaderUser();
+    document.getElementById('admin-tab').style.display = '';
+    syncRemote();
+    renderActiveView();
+    showToast(`Welcome, ${payload.given_name || payload.name}! ⚽`, 'success');
+  } catch(e) {
+    console.error('SSO error', e);
+    showToast('Sign-in failed — please try again', 'error');
+  }
+};
+
+function signOut() {
+  if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
+  S.user = null;
+  localStorage.removeItem('wc26_user');
+  closeUserMenu();
+  updateHeaderUser();
+  document.getElementById('admin-tab').style.display = 'none';
+  openModal();
+  renderActiveView();
+}
+
+// ══════════════════════════════════════════════════════
 //  MODAL (Login)
 // ══════════════════════════════════════════════════════
 function buildColorPicker() {
+  const AVATAR_COLORS = [
+    '#7DC242','#3B82F6','#EC4899','#F97316','#8B5CF6',
+    '#06B6D4','#EF4444','#10B981','#F59E0B','#6366F1',
+  ];
   const el = document.getElementById('color-picker');
   if (!el) return;
   const selected = S.user?.color || AVATAR_COLORS[0];
@@ -1175,15 +1260,36 @@ function closeModal() {
   document.getElementById('modal-overlay').classList.remove('open');
 }
 
+function openUserMenu() {
+  const menu = document.getElementById('user-menu');
+  if (!menu || !S.user) return;
+  document.getElementById('user-menu-name').textContent  = S.user.name;
+  document.getElementById('user-menu-email').textContent = S.user.email || '';
+  menu.style.display = '';
+  // close on outside click
+  setTimeout(() => document.addEventListener('click', closeUserMenuOnOutside, { once: true }), 0);
+}
+
+function closeUserMenu() {
+  const menu = document.getElementById('user-menu');
+  if (menu) menu.style.display = 'none';
+}
+
+function closeUserMenuOnOutside(e) {
+  if (!document.getElementById('user-menu')?.contains(e.target)) closeUserMenu();
+}
+
 function bindModal() {
+  // Manual fallback login
   const btn  = document.getElementById('login-btn');
   const name = document.getElementById('login-name');
-
   btn?.addEventListener('click', registerUser);
   name?.addEventListener('keydown', e => { if (e.key === 'Enter') registerUser(); });
 
-  document.getElementById('user-btn')?.addEventListener('click', () => {
-    if (S.user) openModal();
+  // Header user button — open menu if logged in, modal if not
+  document.getElementById('user-btn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (S.user) openUserMenu();
     else openModal();
   });
 }
@@ -1194,18 +1300,11 @@ function registerUser() {
   if (!name) { nameEl?.focus(); showToast('Please enter your name', 'error'); return; }
 
   const selectedDot = document.querySelector('.color-dot.selected');
-  const color = selectedDot?.dataset.color || AVATAR_COLORS[0];
+  const color = selectedDot?.dataset.color || '#7DC242';
 
-  if (!S.user) {
-    S.user = {
-      id:    `u_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-      name,
-      color,
-    };
-  } else {
-    S.user.name  = name;
-    S.user.color = color;
-  }
+  S.user = S.user
+    ? { ...S.user, name, color }
+    : { id: `u_${Date.now()}_${Math.random().toString(36).slice(2,7)}`, name, color, email: '' };
 
   saveLocal();
   closeModal();
@@ -1217,11 +1316,25 @@ function registerUser() {
 }
 
 function updateHeaderUser() {
-  if (!S.user) return;
-  const av   = document.getElementById('header-avatar');
-  const nm   = document.getElementById('header-name');
-  const initials = S.user.name.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
-  if (av) { av.textContent = initials; av.style.background = S.user.color; }
+  const av = document.getElementById('header-avatar');
+  const nm = document.getElementById('header-name');
+
+  if (!S.user) {
+    if (av) { av.innerHTML = '?'; av.style.background = '#333'; }
+    if (nm) nm.textContent = 'Sign in';
+    return;
+  }
+
+  if (av) {
+    if (S.user.picture) {
+      av.innerHTML = `<img src="${S.user.picture}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+      av.style.background = 'transparent';
+    } else {
+      const initials = S.user.name.split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+      av.innerHTML = initials;
+      av.style.background = S.user.color || '#7DC242';
+    }
+  }
   if (nm) nm.textContent = S.user.name.split(' ')[0];
 }
 

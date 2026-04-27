@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚽ WC 2026 Poule · Sam Media</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header id="header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <img src="assets/SAMMEDIA_white.svg" alt="Sam Media" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+      <div class="logo-text" style="display:none">
+        <span class="brand">SAM MEDIA</span>
+      </div>
+      <div class="logo-text">
+        <span class="event">WC 2026 POULE</span>
+      </div>
+    </a>
+
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="leaderboard">🏆 Leaderboard</button>
+      <button class="nav-tab" data-tab="predictions">⚽ Predictions</button>
+      <button class="nav-tab" data-tab="bonus">⭐ Bonus</button>
+      <button class="nav-tab" data-tab="browse">👥 Browse</button>
+      <button class="nav-tab" data-tab="admin" id="admin-tab" style="display:none">🔧 Admin</button>
+    </nav>
+
+    <div class="header-right">
+      <span id="save-status" class="save-status"></span>
+      <button id="user-btn">
+        <div class="avatar" id="header-avatar">?</div>
+        <span id="header-name">Sign in</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ── MAIN ── -->
+<main id="app">
+
+  <!-- LEADERBOARD -->
+  <div class="view active" id="view-leaderboard">
+    <div class="section-header">
+      <div>
+        <div class="section-title"><span class="icon">🏆</span> Leaderboard</div>
+        <div class="section-sub">FIFA World Cup 2026 · <span id="lb-participant-count">—</span> participants</div>
+      </div>
+      <div id="lb-deadline-badge"></div>
+    </div>
+
+    <div class="lb-prizes" id="prize-strip">
+      <div class="prize-card">
+        <div class="prize-medal">🥇</div>
+        <div class="prize-place">1st Place</div>
+        <div class="prize-value" id="prize-1">TBA</div>
+      </div>
+      <div class="prize-card">
+        <div class="prize-medal">🥈</div>
+        <div class="prize-place">2nd Place</div>
+        <div class="prize-value" id="prize-2">TBA</div>
+      </div>
+      <div class="prize-card">
+        <div class="prize-medal">🥉</div>
+        <div class="prize-place">3rd Place</div>
+        <div class="prize-value" id="prize-3">TBA</div>
+      </div>
+    </div>
+
+    <div class="stat-row" id="lb-stats"></div>
+
+    <div class="leaderboard-grid" id="leaderboard-list">
+      <!-- Rendered by app.js -->
+    </div>
+  </div>
+
+  <!-- PREDICTIONS -->
+  <div class="view" id="view-predictions">
+    <div class="section-header">
+      <div>
+        <div class="section-title"><span class="icon">⚽</span> My Predictions</div>
+        <div class="section-sub" id="pred-progress-label">Fill in your scores and bracket</div>
+      </div>
+    </div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab active" data-sub="group">Group Stage</button>
+      <button class="sub-tab" data-sub="knockout">Knockout</button>
+    </div>
+
+    <!-- Group Stage sub-view -->
+    <div class="sub-view active" id="sub-group">
+      <div class="group-selector" id="group-selector"></div>
+      <div id="group-content"></div>
+    </div>
+
+    <!-- Knockout sub-view -->
+    <div class="sub-view" id="sub-knockout">
+      <div class="ko-intro">
+        <span style="font-size:18px">ℹ️</span>
+        <span>Pick the winner of each knockout match. You can keep adjusting each round until it locks on its start date.
+        <strong class="text-green"> Points increase each round</strong> — getting the Final right earns the most.</span>
+      </div>
+      <div class="ko-round-tabs" id="ko-round-tabs"></div>
+      <div id="ko-content"></div>
+    </div>
+  </div>
+
+  <!-- BONUS -->
+  <div class="view" id="view-bonus">
+    <div class="section-header">
+      <div>
+        <div class="section-title"><span class="icon">⭐</span> Bonus Questions</div>
+        <div class="section-sub">Extra points for special predictions — click the links for odds and tips</div>
+      </div>
+    </div>
+    <div class="bonus-grid" id="bonus-grid"></div>
+  </div>
+
+  <!-- BROWSE -->
+  <div class="view" id="view-browse">
+    <div class="section-header">
+      <div>
+        <div class="section-title"><span class="icon">👥</span> Browse Predictions</div>
+        <div class="section-sub">See what everyone else is predicting</div>
+      </div>
+    </div>
+
+    <div class="browse-search-wrap">
+      <span class="browse-search-icon">🔍</span>
+      <input class="browse-search" id="browse-search" type="text" placeholder="Search by name…" />
+    </div>
+
+    <div class="browse-user-grid" id="browse-users"></div>
+    <div id="browse-detail"></div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="view" id="view-admin">
+    <div id="admin-gate-wrap">
+      <div class="admin-gate">
+        <div style="font-size:40px;margin-bottom:16px">🔧</div>
+        <h2>Admin Panel</h2>
+        <p>Enter the admin password to access match results and round controls.</p>
+        <div class="form-group">
+          <input class="form-input" id="admin-pw-input" type="password" placeholder="Admin password" />
+        </div>
+        <button class="btn btn-primary" id="admin-login-btn" style="width:100%">Unlock</button>
+      </div>
+    </div>
+
+    <div id="admin-content" style="display:none">
+      <div class="section-header">
+        <div>
+          <div class="section-title"><span class="icon">🔧</span> Admin Panel</div>
+          <div class="section-sub">Enter match results and control round locking</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="admin-export-btn">📥 Export scores CSV</button>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-title">Prizes</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div class="form-group" style="flex:1;min-width:200px">
+            <label class="form-label">1st Place Prize</label>
+            <input class="form-input" id="prize-input-1" type="text" placeholder="e.g. €100 voucher" />
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px">
+            <label class="form-label">2nd Place Prize</label>
+            <input class="form-input" id="prize-input-2" type="text" placeholder="e.g. €50 voucher" />
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px">
+            <label class="form-label">3rd Place Prize</label>
+            <input class="form-input" id="prize-input-3" type="text" placeholder="e.g. €25 voucher" />
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="save-prizes-btn">Save prizes</button>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-title">Lock Rounds</div>
+        <div class="lock-grid" id="lock-grid"></div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-title">Enter Match Results — Group Stage</div>
+        <div class="group-selector" id="admin-group-selector"></div>
+        <div class="result-entry-grid" id="admin-result-grid"></div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-section-title">Enter Match Results — Knockout</div>
+        <div class="ko-round-tabs" id="admin-ko-round-tabs"></div>
+        <div class="result-entry-grid" id="admin-ko-result-grid"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── LOGIN MODAL ── -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-logo">
+      <img src="assets/SAMMEDIA_white.svg" alt="Sam Media"
+           onerror="this.style.display='none'" />
+      <div class="modal-logo-text">⚽ WC 2026 Poule</div>
+      <div class="modal-logo-sub">Sam Media · 95 participants</div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Your Name</label>
+      <input class="form-input" id="login-name" type="text"
+             placeholder="e.g. Jorg van Gaal" autocomplete="name" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Pick a colour</label>
+      <div class="color-picker" id="color-picker"></div>
+    </div>
+
+    <button class="btn btn-primary" id="login-btn" style="width:100%;justify-content:center;padding:13px">
+      Join the Poule 🚀
+    </button>
+  </div>
+</div>
+
+<!-- ── TOAST CONTAINER ── -->
+<div id="toast-container"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

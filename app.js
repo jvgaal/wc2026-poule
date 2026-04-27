@@ -4,7 +4,7 @@
 //  CONFIG  —  update BACKEND_URL after deploying Apps Script
 // ══════════════════════════════════════════════════════
 const CONFIG = {
-  BACKEND_URL:    'YOUR_APPS_SCRIPT_URL_HERE',   // ← replace after Step 2 in SETUP.md
+  BACKEND_URL:    'https://script.google.com/a/macros/sam-media.com/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',   // ← replace after Step 2 in SETUP.md
   ADMIN_PASSWORD: 'worldcup2026',                 // ← change this!
 };
 

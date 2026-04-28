@@ -697,6 +697,42 @@ function renderBracket() {
       setKoTeam(round, +idx, side, sel.value);
     });
   });
+  // Bind score inputs
+  document.getElementById('ko-content').querySelectorAll('.bkt-score-in').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const {round, idx, side} = inp.dataset;
+      setKoScore(round, +idx, side, inp.value);
+    });
+  });
+
+  // Auto-scale to fit viewport (no scrollbar)
+  fitBracket();
+}
+
+function fitBracket() {
+  const wrap = document.querySelector('.bkt-scroll');
+  const tree = wrap?.querySelector('.bkt-tree');
+  if (!wrap || !tree) return;
+  // Reset transforms before measuring
+  tree.style.transform = '';
+  wrap.style.height = '';
+  const wrapW    = wrap.clientWidth;
+  const naturalW = tree.scrollWidth;
+  const scale    = Math.min(1, (wrapW - 4) / naturalW);
+  tree.style.transformOrigin = 'top left';
+  tree.style.transform       = `scale(${scale})`;
+  wrap.style.height          = `${tree.offsetHeight * scale}px`;
+}
+
+// Re-fit on window resize when knockout is visible
+window.addEventListener('resize', () => {
+  if (S.activeTab === 'predictions' && S.activeSub === 'knockout') fitBracket();
+});
+
+function setKoScore(roundId, idx, side, val) {
+  if (!S.koPredictions[roundId]) return;
+  S.koPredictions[roundId][idx][side] = val;
+  debouncedSave();
 }
 
 function bktColHdr(roundId) {
@@ -710,34 +746,45 @@ function bktColHdr(roundId) {
 
 function bktCard(roundId, idx, hasSelects, locked) {
   const r    = WC.koRounds.find(x => x.id === roundId);
-  const slot = S.koPredictions[roundId]?.[idx] || {home:'',away:'',winner:''};
+  const slot = S.koPredictions[roundId]?.[idx] || {home:'',away:'',winner:'',hScore:'',aScore:''};
   const h    = slot.home ? WC.teams[slot.home] : null;
   const a    = slot.away ? WC.teams[slot.away] : null;
   const hw   = slot.winner && slot.winner === slot.home;
   const aw   = slot.winner && slot.winner === slot.away;
   const mNum = r.startMatch != null ? `M${r.startMatch + idx}` : r.short;
+  const isDraw = slot.hScore !== '' && slot.aScore !== '' && +slot.hScore === +slot.aScore;
+
+  // Score input cell (always present unless locked)
+  const scoreInput = (side) => locked
+    ? `<span class="bkt-score-display">${slot[side] !== '' ? slot[side] : '–'}</span>`
+    : `<input type="number" class="bkt-score-in" min="0" max="20"
+              data-round="${roundId}" data-idx="${idx}" data-side="${side}"
+              value="${slot[side] !== '' ? slot[side] : ''}" placeholder="–" inputmode="numeric" />`;
 
   const teamRow = (side, team, isWinner) => {
-    if (hasSelects && !locked) {
-      return `<select class="bkt-sel" data-round="${roundId}" data-idx="${idx}" data-side="${side}">
-        <option value="">— Pick team —</option>
-        ${teamOptions(slot[side])}
-      </select>`;
-    }
-    return `<div class="bkt-slot${team ? ' filled' : ''}${isWinner ? ' winner' : ''}">
-      ${team
-        ? `<span class="bkt-flag">${team.flag}</span><span class="bkt-tname">${team.name}</span>`
-        : `<span class="bkt-tbd">TBD</span>`}
-    </div>`;
+    const teamCell = (hasSelects && !locked)
+      ? `<select class="bkt-sel" data-round="${roundId}" data-idx="${idx}" data-side="${side}">
+           <option value="">— Pick team —</option>
+           ${teamOptions(slot[side])}
+         </select>`
+      : `<div class="bkt-slot${team ? ' filled' : ''}${isWinner ? ' winner' : ''}">
+           ${team
+             ? `<span class="bkt-flag">${team.flag}</span><span class="bkt-tname">${team.name}</span>`
+             : `<span class="bkt-tbd">TBD</span>`}
+         </div>`;
+    return `<div class="bkt-team-line">${teamCell}${scoreInput(side === 'home' ? 'hScore' : 'aScore')}</div>`;
   };
 
+  // Winner row: always show if both teams set (so user can pick after a draw)
   const winnerRow = h && a && !locked ? `
     <div class="bkt-winner-row">
-      <button class="bkt-flag-btn${hw ? ' chosen' : ''}" onclick="quickPickWinner('${roundId}',${idx},'${slot.home}')">
+      <button class="bkt-flag-btn${hw ? ' chosen' : ''}" title="${h.name} advances"
+              onclick="quickPickWinner('${roundId}',${idx},'${slot.home}')">
         ${h.flag}
       </button>
-      <span class="bkt-adv">advances</span>
-      <button class="bkt-flag-btn${aw ? ' chosen' : ''}" onclick="quickPickWinner('${roundId}',${idx},'${slot.away}')">
+      <span class="bkt-adv">${isDraw ? 'on pens →' : 'advances'}</span>
+      <button class="bkt-flag-btn${aw ? ' chosen' : ''}" title="${a.name} advances"
+              onclick="quickPickWinner('${roundId}',${idx},'${slot.away}')">
         ${a.flag}
       </button>
     </div>` : '';

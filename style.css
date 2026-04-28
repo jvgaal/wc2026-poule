@@ -702,11 +702,9 @@ body::after {
 
 /* ── BRACKET LAYOUT ── */
 .bkt-scroll {
-  overflow-x: auto;
-  overflow-y: visible;
-  padding-bottom: 12px;
-  /* subtle inset shadow to hint at scrollability */
-  box-shadow: inset -20px 0 20px -10px rgba(0,0,0,0.4);
+  overflow: hidden;
+  width: 100%;
+  /* JS sets height to scaled tree height so nothing gets cut off */
 }
 
 .bkt-tree {
@@ -810,6 +808,49 @@ body::after {
 }
 
 .bkt-lock { font-size: 10px; }
+
+/* Team line: team cell + score input on one row */
+.bkt-team-line {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.bkt-team-line > .bkt-sel,
+.bkt-team-line > .bkt-slot {
+  flex: 1;
+  margin-bottom: 0;
+}
+.bkt-score-in {
+  width: 32px;
+  flex-shrink: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  padding: 0;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.bkt-score-in::-webkit-outer-spin-button,
+.bkt-score-in::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.bkt-score-in:focus { outline: none; border-color: var(--green); }
+.bkt-score-display {
+  width: 32px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
 
 /* Team select (R32 — free pick) */
 .bkt-sel {

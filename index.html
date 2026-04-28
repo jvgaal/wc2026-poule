@@ -41,6 +41,7 @@
           <div class="user-menu-name" id="user-menu-name"></div>
           <div class="user-menu-email" id="user-menu-email"></div>
         </div>
+        <button class="user-menu-item" onclick="changeNickname()">✏️ Change nickname</button>
         <button class="user-menu-item danger" onclick="signOut()">Sign out</button>
       </div>
     </div>
@@ -223,6 +224,18 @@
       <p class="sso-desc">Sign in with your Sam Media Google account to join and save your predictions.</p>
       <div id="google-signin-btn" class="google-btn-wrap"></div>
       <p class="sso-hint">Only @sam-media.com accounts are accepted</p>
+    </div>
+
+    <!-- Nickname step (shown after Google sign-in) -->
+    <div id="nickname-block" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Choose your nickname</label>
+        <p style="font-size:13px;color:var(--text-sub);margin:4px 0 14px">This is what shows on the leaderboard — max 20 characters.</p>
+        <input class="form-input" id="nickname-input" type="text" placeholder="e.g. The Predictor" maxlength="20" autocomplete="off" />
+      </div>
+      <button class="btn btn-primary" id="nickname-btn" style="width:100%;justify-content:center;padding:13px">
+        Join the Poule ⚽
+      </button>
     </div>
 
     <!-- Fallback manual login (shown when CLIENT_ID not yet set) -->

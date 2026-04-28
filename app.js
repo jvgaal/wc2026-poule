@@ -130,7 +130,7 @@ async function syncRemote() {
     const form = new FormData();
     form.append('action',  'sync');
     form.append('userId',  S.user.id);
-    form.append('name',    S.user.name);
+    form.append('name',    S.user.nickname || S.user.name.split(' ')[0]);
     form.append('color',   S.user.picture || S.user.color || '#7DC242');
     form.append('group',   JSON.stringify(S.predictions));
     form.append('bonus',   JSON.stringify(S.bonusPredictions));
@@ -383,7 +383,7 @@ function renderLeaderboard() {
       <div class="lb-user">
         ${avatarHtml(u, 28)}
         <div>
-          <div class="lb-name">${esc(u.name)}${isMe ? ' <span style="font-size:11px;color:var(--green)">(you)</span>' : ''}</div>
+          <div class="lb-name">${esc(displayName(u))}${isMe ? ' <span style="font-size:11px;color:var(--green)">(you)</span>' : ''}</div>
           <div class="lb-sub">${u.score.group}G · ${u.score.ko}K · ${u.score.bonus}B pts</div>
         </div>
       </div>
@@ -830,7 +830,7 @@ function renderUserGrid(filter) {
 
   const filtered = [...allIds]
     .map(id => getUserObj(id))
-    .filter(u => !filter || u.name.toLowerCase().includes(filter));
+    .filter(u => !filter || displayName(u).toLowerCase().includes(filter));
 
   const el = document.getElementById('browse-users');
   if (filtered.length === 0) {
@@ -847,7 +847,7 @@ function renderUserGrid(filter) {
     <div class="browse-user-card${isMe ? ' me' : ''}" onclick="viewUserPredictions('${u.id}')">
       ${avatarHtml(u, 32)}
       <div class="browse-user-info">
-        <div class="browse-user-name">${esc(u.name)}${isMe ? ' (you)' : ''}</div>
+        <div class="browse-user-name">${esc(displayName(u))}${isMe ? ' (you)' : ''}</div>
         <div class="browse-user-pts">${score.total} pts · ${countFilled(u.id)}/72</div>
       </div>
     </div>`;
@@ -915,7 +915,7 @@ function viewUserPredictions(userId) {
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       ${avatarHtml(user, 40)}
       <div>
-        <div style="font-size:18px;font-weight:700">${esc(user.name)}</div>
+        <div style="font-size:18px;font-weight:700">${esc(displayName(user))}</div>
         <div style="color:var(--text-sub);font-size:13px">${score.total} pts · ${countFilled(userId)}/72 matches filled</div>
       </div>
       <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="closeBrowseDetail()">✕ Close</button>
@@ -1196,21 +1196,30 @@ window.handleGoogleSignIn = function(response) {
       return;
     }
 
+    const existing = JSON.parse(localStorage.getItem('wc26_user') || 'null');
+    const existingNick = existing?.id === `g_${payload.sub}` ? existing.nickname : '';
+
     S.user = {
-      id:      `g_${payload.sub}`,
-      name:    payload.name,
-      email:   payload.email,
-      picture: payload.picture || '',
-      color:   '#7DC242',
+      id:       `g_${payload.sub}`,
+      name:     payload.name,
+      email:    payload.email,
+      picture:  payload.picture || '',
+      color:    '#7DC242',
+      nickname: existingNick || '',
     };
 
     saveLocal();
-    closeModal();
-    updateHeaderUser();
-    document.getElementById('admin-tab').style.display = '';
-    syncRemote();
-    renderActiveView();
-    showToast(`Welcome, ${payload.given_name || payload.name}! ⚽`, 'success');
+    // Show nickname step — only skip if they already have one
+    if (S.user.nickname) {
+      closeModal();
+      updateHeaderUser();
+      document.getElementById('admin-tab').style.display = '';
+      syncRemote();
+      renderActiveView();
+      showToast(`Welcome back, ${S.user.nickname}! ⚽`, 'success');
+    } else {
+      showNicknameStep(payload.given_name || payload.name.split(' ')[0]);
+    }
   } catch(e) {
     console.error('SSO error', e);
     showToast('Sign-in failed — please try again', 'error');
@@ -1226,6 +1235,47 @@ function signOut() {
   document.getElementById('admin-tab').style.display = 'none';
   openModal();
   renderActiveView();
+}
+
+// Returns the name to display publicly for any user object
+function displayName(user) {
+  if (!user) return '?';
+  if (S.user && user.id === S.user.id) return S.user.nickname || S.user.name.split(' ')[0];
+  return user.name || user.id;   // for other users, name IS their stored nickname
+}
+
+function showNicknameStep(suggestedName) {
+  // Hide SSO/manual blocks, show nickname block
+  document.getElementById('sso-block').style.display = 'none';
+  document.getElementById('manual-login-block').style.display = 'none';
+  document.getElementById('nickname-block').style.display = '';
+  const input = document.getElementById('nickname-input');
+  if (input) { input.value = suggestedName || ''; input.focus(); input.select(); }
+}
+
+function saveNickname(isChange = false) {
+  const input = document.getElementById('nickname-input');
+  const nick  = input?.value.trim();
+  if (!nick) { input?.focus(); showToast('Please enter a nickname', 'error'); return; }
+  if (nick.length > 20) { showToast('Max 20 characters', 'error'); return; }
+
+  S.user.nickname = nick;
+  saveLocal();
+  closeModal();
+  // Reset modal to SSO block for next open
+  document.getElementById('nickname-block').style.display = 'none';
+  document.getElementById('sso-block').style.display = '';
+  updateHeaderUser();
+  document.getElementById('admin-tab').style.display = '';
+  syncRemote();
+  renderActiveView();
+  showToast(isChange ? `Nickname updated to "${nick}" ✓` : `Let's go, ${nick}! ⚽`, 'success');
+}
+
+function changeNickname() {
+  closeUserMenu();
+  showNicknameStep(S.user.nickname || S.user.name.split(' ')[0]);
+  openModal();
 }
 
 // ══════════════════════════════════════════════════════
@@ -1263,8 +1313,8 @@ function closeModal() {
 function openUserMenu() {
   const menu = document.getElementById('user-menu');
   if (!menu || !S.user) return;
-  document.getElementById('user-menu-name').textContent  = S.user.name;
-  document.getElementById('user-menu-email').textContent = S.user.email || '';
+  document.getElementById('user-menu-name').textContent  = displayName(S.user);
+  document.getElementById('user-menu-email').textContent = S.user.email || S.user.name;
   menu.style.display = '';
   // close on outside click
   setTimeout(() => document.addEventListener('click', closeUserMenuOnOutside, { once: true }), 0);
@@ -1285,6 +1335,10 @@ function bindModal() {
   const name = document.getElementById('login-name');
   btn?.addEventListener('click', registerUser);
   name?.addEventListener('keydown', e => { if (e.key === 'Enter') registerUser(); });
+
+  // Nickname step
+  document.getElementById('nickname-btn')?.addEventListener('click', () => saveNickname(false));
+  document.getElementById('nickname-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') saveNickname(false); });
 
   // Header user button — open menu if logged in, modal if not
   document.getElementById('user-btn')?.addEventListener('click', (e) => {
@@ -1335,7 +1389,7 @@ function updateHeaderUser() {
       av.style.background = S.user.color || '#7DC242';
     }
   }
-  if (nm) nm.textContent = S.user.name.split(' ')[0];
+  if (nm) nm.textContent = displayName(S.user);
 }
 
 // ══════════════════════════════════════════════════════

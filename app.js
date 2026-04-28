@@ -131,14 +131,18 @@ async function syncRemote() {
     form.append('action',  'sync');
     form.append('userId',  S.user.id);
     form.append('name',    S.user.nickname || S.user.name.split(' ')[0]);
-    form.append('color',   S.user.picture || S.user.color || '#7DC242');
+    form.append('color',   S.user.color || '#7DC242');   // always a hex — never the photo URL
+    form.append('avatar',  S.user.picture || '');        // photo URL in separate field
     form.append('group',   JSON.stringify(S.predictions));
     form.append('bonus',   JSON.stringify(S.bonusPredictions));
     form.append('ko',      JSON.stringify(S.koPredictions));
-    await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
+    const res = await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     setStatus('saved');
   } catch(e) {
+    console.warn('Sync failed:', e.message);
     setStatus('error');
+    setTimeout(() => setStatus('idle'), 4000);  // auto-clear after 4 s
   }
 }
 

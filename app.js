@@ -835,11 +835,11 @@ function bonusCard(q) {
 
   return `
   <div class="bonus-card">
-    <div class="bonus-header">
-      <div class="bonus-emoji">${q.emoji}</div>
-      <div class="bonus-question">${q.question}</div>
-      <div class="bonus-pts">${ptsDisplay}</div>
+    <div class="bonus-card-top">
+      <span class="bonus-emoji">${q.emoji}</span>
+      <span class="bonus-pts">${ptsDisplay}</span>
     </div>
+    <div class="bonus-question">${q.question}</div>
     <div class="bonus-tip">${q.tip}</div>
     ${input}
     ${links ? `<div class="bonus-links">${links}</div>` : ''}

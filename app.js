@@ -1239,11 +1239,16 @@ window.handleGoogleSignIn = function(response) {
       return;
     }
 
-    const existing = JSON.parse(localStorage.getItem('wc26_user') || 'null');
-    const existingNick = existing?.id === `g_${payload.sub}` ? existing.nickname : '';
+    const userId = `g_${payload.sub}`;
+    // Nickname persists across sign-outs via a separate key
+    const savedNicks = JSON.parse(localStorage.getItem('wc26_nicknames') || '{}');
+    const existing   = JSON.parse(localStorage.getItem('wc26_user') || 'null');
+    const existingNick = savedNicks[userId]
+      || (existing?.id === userId ? existing.nickname : '')
+      || '';
 
     S.user = {
-      id:       `g_${payload.sub}`,
+      id:       userId,
       name:     payload.name,
       email:    payload.email,
       picture:  payload.picture || '',
@@ -1303,6 +1308,10 @@ function saveNickname(isChange = false) {
   if (nick.length > 20) { showToast('Max 20 characters', 'error'); return; }
 
   S.user.nickname = nick;
+  // Persist nickname separately so it survives sign-out
+  const nicks = JSON.parse(localStorage.getItem('wc26_nicknames') || '{}');
+  nicks[S.user.id] = nick;
+  localStorage.setItem('wc26_nicknames', JSON.stringify(nicks));
   saveLocal();
   closeModal();
   // Reset modal to SSO block for next open

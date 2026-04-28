@@ -7,12 +7,12 @@
   --green:      #7DC242;
   --green-dim:  #5a9030;
   --green-glow: rgba(125, 194, 66, 0.15);
-  --bg:         #050d05;
-  --bg-card:    #0a160a;
-  --bg-card2:   #0e1e0e;
-  --bg-input:   #061006;
-  --border:     #1a2d1a;
-  --border-hi:  #26402a;
+  --bg:         #060e08;
+  --bg-card:    #0c1a0e;
+  --bg-card2:   #112214;
+  --bg-input:   #07100a;
+  --border:     #1c3020;
+  --border-hi:  #2a4830;
   --text:       #f0f0f0;
   --text-sub:   #888;
   --text-dim:   #555;
@@ -34,15 +34,21 @@ html { scroll-behavior: smooth; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background:
-    /* Floodlight towers — top-left & top-right beams */
-    radial-gradient(ellipse 280px 400px at  6%  0%, rgba(125,194,66,0.18) 0%, transparent 70%),
-    radial-gradient(ellipse 280px 400px at 94%  0%, rgba(125,194,66,0.18) 0%, transparent 70%),
-    radial-gradient(ellipse 160px 280px at 22%  0%, rgba(125,194,66,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 160px 280px at 78%  0%, rgba(125,194,66,0.08) 0%, transparent 60%),
-    /* Pitch green glow rising from bottom */
-    radial-gradient(ellipse 900px 220px at 50% 105%, rgba(125,194,66,0.22) 0%, transparent 65%),
-    /* Deep night-green base */
-    linear-gradient(180deg, #020602 0%, #040a04 25%, #060d06 55%, #081208 80%, #0a160a 100%);
+    /* Sam Green dome overhead — stadium atmosphere */
+    radial-gradient(ellipse 140% 45% at 50% -8%, rgba(125,194,66,0.32) 0%, transparent 55%),
+    /* Floodlight towers — sharp beams left & right */
+    radial-gradient(ellipse 22% 65% at  3%  2%, rgba(125,194,66,0.22) 0%, transparent 75%),
+    radial-gradient(ellipse 22% 65% at 97%  2%, rgba(125,194,66,0.22) 0%, transparent 75%),
+    /* Secondary beam fans */
+    radial-gradient(ellipse 18% 50% at 18%  0%, rgba(125,194,66,0.10) 0%, transparent 65%),
+    radial-gradient(ellipse 18% 50% at 82%  0%, rgba(125,194,66,0.10) 0%, transparent 65%),
+    /* Warm crowd glow — amber from mid-stands */
+    radial-gradient(ellipse 55% 35% at 78% 72%, rgba(220,150,40,0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 30% at 22% 68%, rgba(200,130,30,0.10) 0%, transparent 50%),
+    /* Pitch green rising from bottom */
+    radial-gradient(ellipse 85% 28% at 50% 108%, rgba(125,194,66,0.20) 0%, transparent 62%),
+    /* Deep charcoal-teal base */
+    linear-gradient(180deg, #040a06 0%, #060e08 22%, #07100a 50%, #08130c 75%, #091508 100%);
   color: var(--text);
   min-height: 100vh;
   font-size: 15px;
@@ -681,123 +687,206 @@ body::after {
   gap: 10px;
 }
 
-.ko-round-tabs {
+/* ── BRACKET TOOLBAR ── */
+.bkt-toolbar {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  gap: 14px;
   flex-wrap: wrap;
   margin-bottom: 20px;
 }
+.bkt-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+}
 
-.ko-round-btn {
-  padding: 7px 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-sub);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition);
+/* ── BRACKET LAYOUT ── */
+.bkt-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 12px;
+  /* subtle inset shadow to hint at scrollability */
+  box-shadow: inset -20px 0 20px -10px rgba(0,0,0,0.4);
+}
+
+.bkt-tree {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
+  min-width: 1260px;
+  height: 940px;   /* 8 slots × 940/8 = 117.5px each */
 }
 
-.ko-round-btn:hover { border-color: var(--border-hi); color: var(--text); }
-.ko-round-btn.active { background: var(--green-glow); border-color: var(--green); color: var(--green); }
-.ko-round-btn .pts-badge {
-  font-size: 10px;
-  background: var(--border);
-  padding: 1px 5px;
-  border-radius: 3px;
-  color: var(--text-dim);
-}
-.ko-round-btn.active .pts-badge { background: var(--green); color: #000; }
-
-.ko-match-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 12px;
-}
-
-.ko-match-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-  transition: border-color var(--transition);
-}
-
-.ko-match-card:hover { border-color: var(--border-hi); }
-
-.ko-match-num {
-  font-size: 11px;
-  color: var(--text-dim);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 12px;
-}
-
-.ko-team-row {
+/* Each round column */
+.bkt-col {
   display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 100%;
+  flex: 0 0 150px;
+  padding-top: 44px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.bkt-col-hdr {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: all var(--transition);
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(125,194,66,0.04);
 }
 
-.ko-team-row:hover { border-color: var(--border-hi); }
-.ko-team-row.selected { border-color: var(--green); background: var(--green-glow); }
-
-.ko-team-row select {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text);
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  outline: none;
-  appearance: none;
+.bkt-col-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
-.ko-team-row select option { background: #1c1c1c; }
+.bkt-col-pts {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+}
 
-.ko-vs { text-align: center; font-size: 11px; color: var(--text-dim); font-weight: 600; margin: 4px 0 8px; }
+/* Center column: Final + 3rd */
+.bkt-center-col {
+  flex: 0 0 168px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 0;
+  border-left: 1px solid rgba(125,194,66,0.2);
+  border-right: 1px solid rgba(125,194,66,0.2);
+}
 
-.ko-winner-label {
+.bkt-center-lbl {
+  text-align: center;
   font-size: 11px;
-  color: var(--text-dim);
-  margin-bottom: 6px;
-  margin-top: 10px;
+  font-weight: 700;
+  color: var(--text-sub);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0 12px;
 }
 
-.ko-winner-select {
-  width: 100%;
-  padding: 8px 12px;
+/* ── BRACKET CARD ── */
+.bkt-card {
   background: var(--bg-card2);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font-size: 13px;
-  cursor: pointer;
-  outline: none;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%23888'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 32px;
-  transition: border-color var(--transition);
+  border-radius: 8px;
+  padding: 8px 9px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  position: relative;
 }
 
-.ko-winner-select:focus { border-color: var(--green); }
-.ko-winner-select option { background: #1c1c1c; }
+.bkt-card.has-winner {
+  border-color: rgba(125,194,66,0.35);
+  box-shadow: 0 0 12px rgba(125,194,66,0.08);
+}
+
+.bkt-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.bkt-mnum {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.04em;
+}
+
+.bkt-lock { font-size: 10px; }
+
+/* Team select (R32 — free pick) */
+.bkt-sel {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  padding: 5px 7px;
+  font-size: 11.5px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: border-color 0.12s;
+}
+.bkt-sel:focus { outline: none; border-color: var(--green); }
+.bkt-sel option { background: #0c1a0e; }
+
+/* Team slot (R16 onward — auto-filled) */
+.bkt-slot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border-radius: 5px;
+  background: var(--bg-card);
+  border: 1px solid transparent;
+  font-size: 11.5px;
+  margin-bottom: 4px;
+  min-height: 27px;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.bkt-slot.filled  { color: var(--text); border-color: var(--border); }
+.bkt-slot.winner  {
+  background: rgba(125,194,66,0.14);
+  border-color: rgba(125,194,66,0.45);
+  color: var(--green);
+  font-weight: 700;
+}
+.bkt-flag  { font-size: 15px; flex-shrink: 0; }
+.bkt-tname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bkt-tbd   { color: var(--text-dim); font-style: italic; font-size: 11px; }
+
+/* Winner pick row */
+.bkt-winner-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+}
+.bkt-adv { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+.bkt-flag-btn {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.14s;
+  line-height: 1;
+}
+.bkt-flag-btn:hover:not(.chosen) { border-color: var(--border-hi); transform: scale(1.08); }
+.bkt-flag-btn.chosen {
+  border-color: var(--green);
+  background: rgba(125,194,66,0.18);
+  box-shadow: 0 0 10px rgba(125,194,66,0.35);
+  transform: scale(1.12);
+}
 
 /* ── BONUS QUESTIONS ── */
 .bonus-grid {

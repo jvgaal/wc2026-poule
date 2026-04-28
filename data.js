@@ -98,12 +98,12 @@ const WC = {
   },
 
   koRounds: [
-    { id: "r32",   name: "Round of 32",    short: "R32", matches: 16, pts: 2, lockDate: "2026-06-28" },
-    { id: "r16",   name: "Round of 16",    short: "R16", matches: 8,  pts: 3, lockDate: "2026-07-05" },
-    { id: "qf",    name: "Quarter-Finals", short: "QF",  matches: 4,  pts: 4, lockDate: "2026-07-10" },
-    { id: "sf",    name: "Semi-Finals",    short: "SF",  matches: 2,  pts: 5, lockDate: "2026-07-14" },
-    { id: "third", name: "3rd Place",      short: "3rd", matches: 1,  pts: 3, lockDate: "2026-07-18" },
-    { id: "final", name: "Final",          short: "F",   matches: 1,  pts: 8, lockDate: "2026-07-19" },
+    { id: "r32",   name: "Round of 32",    short: "R32", matches: 16, pts: 2, lockDate: "2026-06-28", startMatch: 73  },
+    { id: "r16",   name: "Round of 16",    short: "R16", matches: 8,  pts: 3, lockDate: "2026-07-05", startMatch: 89  },
+    { id: "qf",    name: "Quarter-Finals", short: "QF",  matches: 4,  pts: 4, lockDate: "2026-07-10", startMatch: 97  },
+    { id: "sf",    name: "Semi-Finals",    short: "SF",  matches: 2,  pts: 5, lockDate: "2026-07-14", startMatch: 101 },
+    { id: "third", name: "3rd Place",      short: "3rd", matches: 1,  pts: 3, lockDate: "2026-07-18", startMatch: 103 },
+    { id: "final", name: "Final",          short: "F",   matches: 1,  pts: 8, lockDate: "2026-07-19", startMatch: 104 },
   ],
 
   bonusQuestions: [

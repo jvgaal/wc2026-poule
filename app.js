@@ -597,140 +597,179 @@ function renderStandingsTable(standings, groupId) {
 }
 
 // ══════════════════════════════════════════════════════
-//  KNOCKOUT VIEW
+//  KNOCKOUT VIEW — Visual Bracket
 // ══════════════════════════════════════════════════════
-function buildKoRoundTabs() {
-  const container = document.getElementById('ko-round-tabs');
-  if (!container) return;
-  container.innerHTML = WC.koRounds.map(r => `
-    <button class="ko-round-btn${r.id === S.activeKoRound ? ' active' : ''}"
-            onclick="selectKoRound('${r.id}')">
-      ${r.name}
-      <span class="pts-badge">${r.pts}pts</span>
-    </button>`).join('');
-}
-
-function selectKoRound(id) {
-  S.activeKoRound = id;
-  document.querySelectorAll('#ko-round-tabs .ko-round-btn').forEach(b => {
-    const matches = b.textContent.includes(WC.koRounds.find(r => r.id === id).name);
-    b.classList.toggle('active', matches);
-  });
-  renderKnockout();
-}
+function buildKoRoundTabs() { /* replaced by full bracket — kept for compat */ }
 
 function renderKnockout() {
   if (!S.user) { renderLoginPrompt('ko-content'); return; }
-  const round   = WC.koRounds.find(r => r.id === S.activeKoRound);
-  const locked  = S.config.locked?.[S.activeKoRound];
-  const content = document.getElementById('ko-content');
+  // Init any missing rounds
+  WC.koRounds.forEach(r => {
+    if (!S.koPredictions[r.id])
+      S.koPredictions[r.id] = Array.from({length: r.matches}, () => ({home:'',away:'',winner:''}));
+  });
+  cascadeWinners();
+  renderBracket();
+}
 
-  if (!S.koPredictions[S.activeKoRound]) {
-    S.koPredictions[S.activeKoRound] = Array.from({ length: round.matches }, () => ({
-      home: '', away: '', winner: ''
-    }));
-  }
+function cascadeWinners() {
+  const get = (r, i) => S.koPredictions[r]?.[i] || {home:'',away:'',winner:''};
+  const setSlot = (r, i, h, a) => {
+    const rnd = WC.koRounds.find(x => x.id === r);
+    if (!S.koPredictions[r])
+      S.koPredictions[r] = Array.from({length: rnd.matches}, () => ({home:'',away:'',winner:''}));
+    const slot = S.koPredictions[r][i];
+    slot.home = h; slot.away = a;
+    if (slot.winner && slot.winner !== h && slot.winner !== a) slot.winner = '';
+  };
+  // R32 → R16 (pair of 2 → 1)
+  for (let i = 0; i < 8; i++)
+    setSlot('r16', i, get('r32', i*2).winner, get('r32', i*2+1).winner);
+  // R16 → QF
+  for (let i = 0; i < 4; i++)
+    setSlot('qf', i, get('r16', i*2).winner, get('r16', i*2+1).winner);
+  // QF → SF
+  for (let i = 0; i < 2; i++)
+    setSlot('sf', i, get('qf', i*2).winner, get('qf', i*2+1).winner);
+  // SF winners → Final
+  setSlot('final', 0, get('sf',0).winner, get('sf',1).winner);
+  // SF losers → 3rd Place
+  const loser = s => s.winner ? (s.winner === s.home ? s.away : s.home) : '';
+  setSlot('third', 0, loser(get('sf',0)), loser(get('sf',1)));
+}
 
-  const cards = S.koPredictions[S.activeKoRound].map((slot, i) => koMatchCard(round, i, slot, locked)).join('');
+function renderBracket() {
+  const lkd = id => !!S.config.locked?.[id];
+  const col  = (roundId, from, to, hasSelects) =>
+    `<div class="bkt-col" data-round="${roundId}">
+       ${bktColHdr(roundId)}
+       ${Array.from({length: to-from}, (_, i) => bktCard(roundId, from+i, hasSelects, lkd(roundId))).join('')}
+     </div>`;
 
-  content.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-      <div style="font-size:16px;font-weight:700">${round.name}</div>
-      ${locked ? '<span class="result-badge home-win" style="font-size:11px">🔒 Locked</span>' : '<button class="btn btn-ghost btn-sm" onclick="autoFillKo()">⚡ Auto-fill from group predictions</button>'}
+  document.getElementById('ko-content').innerHTML = `
+    <div class="bkt-toolbar">
+      <button class="btn btn-ghost btn-sm" onclick="autoFillKo()">⚡ Auto-fill R32 from groups</button>
+      <span class="bkt-hint">Pick winners — they cascade through the bracket automatically</span>
     </div>
-    <div class="ko-match-grid">${cards}</div>`;
+    <div class="bkt-scroll">
+      <div class="bkt-tree">
+        ${col('r32', 0,  8,  true)}
+        ${col('r16', 0,  4,  false)}
+        ${col('qf',  0,  2,  false)}
+        ${col('sf',  0,  1,  false)}
+        <div class="bkt-center-col">
+          <div class="bkt-center-lbl">🏆 Final</div>
+          ${bktCard('final', 0, false, lkd('final'))}
+          <div class="bkt-center-lbl" style="margin-top:20px">🥉 3rd Place</div>
+          ${bktCard('third', 0, false, lkd('third'))}
+        </div>
+        ${col('sf',  1,  2,  false)}
+        ${col('qf',  2,  4,  false)}
+        ${col('r16', 4,  8,  false)}
+        ${col('r32', 8, 16,  true)}
+      </div>
+    </div>`;
 
-  content.querySelectorAll('.ko-winner-select').forEach(sel => {
+  // Bind team selects (R32 only)
+  document.getElementById('ko-content').querySelectorAll('.bkt-sel').forEach(sel => {
     sel.addEventListener('change', () => {
-      const { round: r, idx } = sel.dataset;
-      if (!S.koPredictions[r]) return;
-      S.koPredictions[r][+idx].winner = sel.value;
-      debouncedSave();
+      const {round, idx, side} = sel.dataset;
+      setKoTeam(round, +idx, side, sel.value);
     });
   });
 }
 
-function koMatchCard(round, idx, slot, locked) {
-  const teamOpts = teamOptions(slot.winner);
-  const homeOpts = teamOptions(slot.home);
-  const awayOpts = teamOptions(slot.away);
-
-  // Determine winner options (only the two selected teams, or all if teams not yet chosen)
-  let winnerOpts = '';
-  if (slot.home && slot.away) {
-    const h = WC.teams[slot.home], a = WC.teams[slot.away];
-    winnerOpts = `<option value="">— Pick winner —</option>
-      <option value="${slot.home}" ${slot.winner === slot.home ? 'selected' : ''}>${h.flag} ${h.name}</option>
-      <option value="${slot.away}" ${slot.winner === slot.away ? 'selected' : ''}>${a.flag} ${a.name}</option>`;
-  } else {
-    winnerOpts = `<option value="">— Select teams first —</option>`;
-  }
-
-  return `
-  <div class="ko-match-card">
-    <div class="ko-match-num">Match ${idx + 1}</div>
-    <div class="ko-team-row${slot.home ? ' selected' : ''}">
-      <select onchange="setKoTeam('${round.id}',${idx},'home',this.value)" ${locked ? 'disabled' : ''}>
-        ${homeOpts}
-      </select>
-    </div>
-    <div class="ko-vs">vs</div>
-    <div class="ko-team-row${slot.away ? ' selected' : ''}">
-      <select onchange="setKoTeam('${round.id}',${idx},'away',this.value)" ${locked ? 'disabled' : ''}>
-        ${awayOpts}
-      </select>
-    </div>
-    <div class="ko-winner-label">🏅 Who advances?</div>
-    <select class="ko-winner-select" data-round="${round.id}" data-idx="${idx}" ${locked ? 'disabled' : ''}>
-      ${winnerOpts}
-    </select>
+function bktColHdr(roundId) {
+  const r = WC.koRounds.find(x => x.id === roundId);
+  const locked = S.config.locked?.[roundId];
+  return `<div class="bkt-col-hdr">
+    <span class="bkt-col-name">${r.name}</span>
+    <span class="bkt-col-pts">${locked ? '🔒' : `+${r.pts}pts`}</span>
   </div>`;
+}
+
+function bktCard(roundId, idx, hasSelects, locked) {
+  const r    = WC.koRounds.find(x => x.id === roundId);
+  const slot = S.koPredictions[roundId]?.[idx] || {home:'',away:'',winner:''};
+  const h    = slot.home ? WC.teams[slot.home] : null;
+  const a    = slot.away ? WC.teams[slot.away] : null;
+  const hw   = slot.winner && slot.winner === slot.home;
+  const aw   = slot.winner && slot.winner === slot.away;
+  const mNum = r.startMatch != null ? `M${r.startMatch + idx}` : r.short;
+
+  const teamRow = (side, team, isWinner) => {
+    if (hasSelects && !locked) {
+      return `<select class="bkt-sel" data-round="${roundId}" data-idx="${idx}" data-side="${side}">
+        <option value="">— Pick team —</option>
+        ${teamOptions(slot[side])}
+      </select>`;
+    }
+    return `<div class="bkt-slot${team ? ' filled' : ''}${isWinner ? ' winner' : ''}">
+      ${team
+        ? `<span class="bkt-flag">${team.flag}</span><span class="bkt-tname">${team.name}</span>`
+        : `<span class="bkt-tbd">TBD</span>`}
+    </div>`;
+  };
+
+  const winnerRow = h && a && !locked ? `
+    <div class="bkt-winner-row">
+      <button class="bkt-flag-btn${hw ? ' chosen' : ''}" onclick="quickPickWinner('${roundId}',${idx},'${slot.home}')">
+        ${h.flag}
+      </button>
+      <span class="bkt-adv">advances</span>
+      <button class="bkt-flag-btn${aw ? ' chosen' : ''}" onclick="quickPickWinner('${roundId}',${idx},'${slot.away}')">
+        ${a.flag}
+      </button>
+    </div>` : '';
+
+  return `<div class="bkt-card${hw||aw ? ' has-winner' : ''}">
+    <div class="bkt-card-top">
+      <span class="bkt-mnum">${mNum}</span>
+      ${locked ? '<span class="bkt-lock">🔒</span>' : ''}
+    </div>
+    ${teamRow('home', h, hw)}
+    ${teamRow('away', a, aw)}
+    ${winnerRow}
+  </div>`;
+}
+
+function quickPickWinner(roundId, idx, teamCode) {
+  if (!S.koPredictions[roundId]) return;
+  S.koPredictions[roundId][idx].winner = teamCode;
+  cascadeWinners();
+  debouncedSave();
+  renderBracket();
 }
 
 function setKoTeam(roundId, idx, side, teamCode) {
   if (!S.koPredictions[roundId]) return;
   S.koPredictions[roundId][idx][side] = teamCode;
-  // Reset winner if teams changed
   S.koPredictions[roundId][idx].winner = '';
+  cascadeWinners();
   debouncedSave();
-  renderKnockout();
+  renderBracket();
 }
 
 function autoFillKo() {
-  // Populate R32 home/away from predicted group top-2 finishers
-  // Using a simplified bracket: A1 v ?, B1 v A2, C1 v B2, etc.
   const tops = {};
   WC.groups.forEach(g => {
     const s = calcGroupStandings(g.id, S.user.id);
     tops[g.id] = { first: s[0]?.code || '', second: s[1]?.code || '' };
   });
-
-  // Standard 12-group R32 pairings (approximate, official seeding is more complex)
   const r32Pairs = [
-    [tops.A?.first,  tops.B?.second],
-    [tops.C?.first,  tops.D?.second],
-    [tops.E?.first,  tops.F?.second],
-    [tops.G?.first,  tops.H?.second],
-    [tops.I?.first,  tops.J?.second],
-    [tops.K?.first,  tops.L?.second],
-    [tops.B?.first,  tops.A?.second],
-    [tops.D?.first,  tops.C?.second],
-    [tops.F?.first,  tops.E?.second],
-    [tops.H?.first,  tops.G?.second],
-    [tops.J?.first,  tops.I?.second],
-    [tops.L?.first,  tops.K?.second],
-    [tops.A?.first,  tops.C?.second],
-    [tops.B?.first,  tops.D?.second],
-    [tops.E?.first,  tops.G?.second],
-    [tops.F?.first,  tops.H?.second],
+    [tops.A?.first, tops.B?.second], [tops.C?.first, tops.D?.second],
+    [tops.E?.first, tops.F?.second], [tops.G?.first, tops.H?.second],
+    [tops.I?.first, tops.J?.second], [tops.K?.first, tops.L?.second],
+    [tops.B?.first, tops.A?.second], [tops.D?.first, tops.C?.second],
+    [tops.F?.first, tops.E?.second], [tops.H?.first, tops.G?.second],
+    [tops.J?.first, tops.I?.second], [tops.L?.first, tops.K?.second],
+    [tops.A?.first, tops.C?.second], [tops.B?.first, tops.D?.second],
+    [tops.E?.first, tops.G?.second], [tops.F?.first, tops.H?.second],
   ];
-
-  S.koPredictions.r32 = r32Pairs.slice(0, 16).map(([h, a]) => ({
-    home: h || '', away: a || '', winner: ''
-  }));
-
+  S.koPredictions.r32 = r32Pairs.map(([h, a]) => ({home: h||'', away: a||'', winner: ''}));
+  cascadeWinners();
   debouncedSave();
-  renderKnockout();
+  renderBracket();
   showToast('Bracket auto-filled from your group predictions!', 'success');
 }
 

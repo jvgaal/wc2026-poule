@@ -77,7 +77,23 @@ function loadLocal() {
     S.config           = JSON.parse(localStorage.getItem('wc26_config'))  || { locked: {}, prizes: { p1:'TBA', p2:'TBA', p3:'TBA' } };
     // Clear legacy users who signed in before SSO (they'll re-auth via Google)
     if (S.user && !S.user.email) S.user = null;
+    // Migrate nickname into the persistent store if not already there
+    if (S.user?.id && S.user?.nickname) persistNickname(S.user.id, S.user.nickname);
   } catch(e) { /* corrupted data — start fresh */ }
+}
+
+function persistNickname(userId, nickname) {
+  try {
+    const nicks = JSON.parse(localStorage.getItem('wc26_nicknames') || '{}');
+    nicks[userId] = nickname;
+    localStorage.setItem('wc26_nicknames', JSON.stringify(nicks));
+  } catch(e) {}
+}
+
+function lookupNickname(userId) {
+  try {
+    return JSON.parse(localStorage.getItem('wc26_nicknames') || '{}')[userId] || '';
+  } catch(e) { return ''; }
 }
 
 function saveLocal() {
@@ -1240,10 +1256,10 @@ window.handleGoogleSignIn = function(response) {
     }
 
     const userId = `g_${payload.sub}`;
-    // Nickname persists across sign-outs via a separate key
-    const savedNicks = JSON.parse(localStorage.getItem('wc26_nicknames') || '{}');
-    const existing   = JSON.parse(localStorage.getItem('wc26_user') || 'null');
-    const existingNick = savedNicks[userId]
+    // Look up nickname from persistent store (survives sign-out)
+    // Also fall back to wc26_user in case they never signed out
+    const existing = JSON.parse(localStorage.getItem('wc26_user') || 'null');
+    const existingNick = lookupNickname(userId)
       || (existing?.id === userId ? existing.nickname : '')
       || '';
 
@@ -1276,6 +1292,8 @@ window.handleGoogleSignIn = function(response) {
 
 function signOut() {
   if (typeof google !== 'undefined') google.accounts.id.disableAutoSelect();
+  // Save nickname before wiping the session
+  if (S.user?.id && S.user?.nickname) persistNickname(S.user.id, S.user.nickname);
   S.user = null;
   localStorage.removeItem('wc26_user');
   closeUserMenu();
@@ -1308,10 +1326,7 @@ function saveNickname(isChange = false) {
   if (nick.length > 20) { showToast('Max 20 characters', 'error'); return; }
 
   S.user.nickname = nick;
-  // Persist nickname separately so it survives sign-out
-  const nicks = JSON.parse(localStorage.getItem('wc26_nicknames') || '{}');
-  nicks[S.user.id] = nick;
-  localStorage.setItem('wc26_nicknames', JSON.stringify(nicks));
+  persistNickname(S.user.id, nick);
   saveLocal();
   closeModal();
   // Reset modal to SSO block for next open

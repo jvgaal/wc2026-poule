@@ -6,7 +6,7 @@
 const CONFIG = {
   BACKEND_URL:      'https://script.google.com/a/macros/sam-media.com/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',
   ADMIN_PASSWORD:   'worldcup2026',
-  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID',      // ← paste from Google Cloud Console
+  GOOGLE_CLIENT_ID: '978303214297-jrpmd7gbaick1s3mt539a67q3npep1e2.apps.googleusercontent.com',      // ← paste from Google Cloud Console
 };
 
 

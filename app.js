@@ -360,11 +360,12 @@ function calcGroupStandings(groupId, userId) {
 //  LEADERBOARD VIEW
 // ══════════════════════════════════════════════════════
 function renderLeaderboard() {
-  // Prizes — set value + optional team background
+  // Prizes — set value + team kit background
+  // Popular team kits: Portugal 🇵🇹, Argentina 🇦🇷, France 🇫🇷
   const PRIZE_TEAMS = {
-    p1: { team: 'JOR', bg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Flag_of_Jordan.svg/640px-Flag_of_Jordan.svg.png' },
-    p2: { team: 'NED', bg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Flag_of_the_Netherlands.svg/640px-Flag_of_the_Netherlands.svg.png' },
-    p3: { team: 'IRN', bg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Flag_of_Iran.svg/640px-Flag_of_Iran.svg.png' },
+    p1: { team: 'POR', name: 'Portugal', kit: 'linear-gradient(135deg, #FF0000 25%, #FF0000 25%, #840000 25%, #840000 50%, #FF0000 50%, #FF0000 75%, #840000 75%)' },
+    p2: { team: 'ARG', name: 'Argentina', kit: 'linear-gradient(180deg, #6CACC5 0%, #6CACC5 50%, #FFFFFF 50%, #FFFFFF 100%)' },
+    p3: { team: 'FRA', name: 'France', kit: 'linear-gradient(180deg, #002395 50%, #FFFFFF 50%, #FFFFFF 50%, #ED2939 50%)' },
   };
   ['1','2','3'].forEach(n => {
     const key = `p${n}`;
@@ -376,11 +377,8 @@ function renderLeaderboard() {
     const bg  = document.getElementById(`ph-bg-${n}`);
     const cfg = PRIZE_TEAMS[key];
     if (bg && cfg) {
-      bg.style.backgroundImage    = `url('${cfg.bg}')`;
-      bg.style.backgroundColor    = '#0c1a0e';
-      bg.style.backgroundRepeat   = 'no-repeat';
-      bg.style.backgroundPosition = 'center';
-      bg.style.backgroundSize     = 'cover';
+      bg.style.background   = cfg.kit;
+      bg.style.backgroundSize = 'cover';
     }
   });
 

@@ -155,6 +155,7 @@ async function syncRemote() {
     form.append('name',    S.user.nickname || S.user.name.split(' ')[0]);
     form.append('color',   S.user.color || '#7DC242');   // always a hex — never the photo URL
     form.append('avatar',  S.user.picture || '');        // photo URL in separate field
+    form.append('email',   S.user.email || '');          // Google email for reminders
     form.append('group',   JSON.stringify(S.predictions));
     form.append('bonus',   JSON.stringify(S.bonusPredictions));
     form.append('ko',      JSON.stringify(S.koPredictions));

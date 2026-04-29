@@ -108,13 +108,13 @@ function checkAdmin(p) {
 
 // ── SYNC USER ──────────────────────────────────────────
 function syncUser(p) {
-  const uid = p.userId, name = p.name, color = p.color;
+  const uid = p.userId, name = p.name, color = p.color, email = p.email || '';
   if (!uid) return { error: 'Missing userId' };
 
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
-  // Upsert user row
-  upsertRow(ss, SHEET_USERS, uid, [uid, name, color, new Date().toISOString()]);
+  // Upsert user row (email in col 4)
+  upsertRow(ss, SHEET_USERS, uid, [uid, name, color, email, new Date().toISOString()]);
 
   // Upsert predictions row
   const group = p.group || '{}';

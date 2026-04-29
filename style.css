@@ -337,9 +337,18 @@ body::after {
   border-radius: var(--radius-sm);
   transition: all var(--transition);
   cursor: pointer;
+  position: relative;
 }
 
 .lb-row:hover { border-color: var(--border-hi); background: var(--bg-card2); }
+.lb-row:hover::after {
+  content: '→ view';
+  position: absolute;
+  right: 76px;
+  font-size: 10px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
 .lb-row.me { border-color: var(--green); background: var(--green-glow); }
 
 .lb-rank {
@@ -402,25 +411,128 @@ body::after {
 }
 
 .lb-prizes {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
 }
 
 .prize-card {
-  flex: 1;
-  min-width: 160px;
-  padding: 16px;
+  position: relative;
+  overflow: hidden;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  padding: 0;
   text-align: center;
+  transition: all 0.3s;
 }
 
-.prize-medal { font-size: 32px; margin-bottom: 6px; }
-.prize-place { font-size: 12px; color: var(--text-sub); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-.prize-value { font-size: 18px; font-weight: 700; margin-top: 4px; }
+.prize-card:hover { border-color: var(--border-hi); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.6); }
+
+.prize-card.rank-1 { border-color: rgba(240,180,41,0.4); }
+.prize-card.rank-2 { border-color: rgba(158,179,194,0.4); }
+.prize-card.rank-3 { border-color: rgba(205,127,50,0.4); }
+
+.prize-hero {
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.prize-hero-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  filter: brightness(0.45) saturate(0.8);
+}
+
+.prize-hero-shirt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  filter: brightness(0.6);
+}
+
+.prize-player-face {
+  position: relative;
+  z-index: 1;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.6);
+  object-fit: cover;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+}
+
+.prize-player-face.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card2);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.prize-body {
+  padding: 16px 14px 18px;
+  background: linear-gradient(180deg, rgba(6,14,8,0) 0%, rgba(6,14,8,0.9) 100%);
+  position: relative;
+  z-index: 2;
+}
+
+.prize-crown { font-size: 28px; margin-bottom: 2px; }
+.prize-place { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); }
+.prize-value {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 6px;
+  min-height: 22px;
+  color: var(--text);
+}
+.prize-value.editable { cursor: pointer; }
+.prize-value.editable:hover { color: var(--green); }
+
+.prize-edit-hint {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.prize-card:hover .prize-edit-hint { opacity: 1; }
+
+/* ── HOW TO PLAY ── */
+.howto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.howto-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  transition: border-color var(--transition);
+}
+
+.howto-card:hover { border-color: var(--border-hi); }
+
+.howto-icon { font-size: 32px; margin-bottom: 10px; }
+.howto-title { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.howto-body { font-size: 13.5px; color: var(--text-sub); line-height: 1.6; }
+.howto-body p { margin-bottom: 8px; }
+.howto-body ul { padding-left: 18px; margin-bottom: 8px; }
+.howto-body li { margin-bottom: 4px; }
 
 /* ── SUB-TABS (within predictions) ── */
 .sub-tabs {
@@ -601,7 +713,7 @@ body::after {
 
 .result-badge.home-win { background: rgba(125,194,66,0.15); color: var(--green); }
 .result-badge.draw     { background: rgba(234,179,8,0.15);  color: var(--yellow); }
-.result-badge.away-win { background: rgba(125,194,66,0.15); color: var(--green); }
+.result-badge.away-win { background: rgba(59,130,246,0.15); color: #60a5fa; }
 
 .actual-result {
   font-size: 12px;

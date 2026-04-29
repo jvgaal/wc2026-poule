@@ -4,7 +4,16 @@
 // ═══════════════════════════════════════════════════════
 
 const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE';  // ← paste your Sheet ID
-const ADMIN_PW       = 'worldcup2026';               // ← match CONFIG.ADMIN_PASSWORD in app.js
+
+// Password stored in Script Properties — configure interval below
+// Key: ADMIN_PW   Value: <your password>
+// Key: REMINDER_DAYS  Value: <days since last update to trigger reminder, default 7>
+function getAdminPw() {
+  return PropertiesService.getScriptProperties().getProperty('ADMIN_PW') || '';
+}
+function getReminderDays() {
+  return parseInt(PropertiesService.getScriptProperties().getProperty('REMINDER_DAYS') || '7', 10);
+}
 const SHEET_USERS    = 'Users';
 const SHEET_PREDS    = 'Predictions';
 const SHEET_RESULTS  = 'Results';
@@ -32,6 +41,7 @@ function doPost(e) {
   try {
     switch (p.action) {
       case 'sync':        result = syncUser(p);         break;
+      case 'checkAdmin':  result = checkAdmin(p);       break;
       case 'saveResults': result = saveResults(p);      break;
       case 'saveConfig':  result = saveConfig(p);       break;
       default:            result = { error: `Unknown action: ${p.action}` };
@@ -90,6 +100,12 @@ function getAll() {
   return { users: userList, predictions: predMap, results, config };
 }
 
+// ── CHECK ADMIN ────────────────────────────────────────
+function checkAdmin(p) {
+  if (!p.pw || p.pw !== getAdminPw()) return { error: 'Unauthorized' };
+  return { ok: true };
+}
+
 // ── SYNC USER ──────────────────────────────────────────
 function syncUser(p) {
   const uid = p.userId, name = p.name, color = p.color;
@@ -111,7 +127,7 @@ function syncUser(p) {
 
 // ── SAVE RESULTS (admin) ───────────────────────────────
 function saveResults(p) {
-  if (p.pw !== ADMIN_PW) return { error: 'Unauthorized' };
+  if (!p.pw || p.pw !== getAdminPw()) return { error: 'Unauthorized' };
   const ss      = SpreadsheetApp.openById(SPREADSHEET_ID);
   const payload = JSON.parse(p.payload || '{}');
 
@@ -124,7 +140,7 @@ function saveResults(p) {
 
 // ── SAVE CONFIG (admin) ────────────────────────────────
 function saveConfig(p) {
-  if (p.pw !== ADMIN_PW) return { error: 'Unauthorized' };
+  if (!p.pw || p.pw !== getAdminPw()) return { error: 'Unauthorized' };
   const ss      = SpreadsheetApp.openById(SPREADSHEET_ID);
   const payload = JSON.parse(p.payload || '{}');
 
@@ -172,6 +188,56 @@ function upsertRow(ss, sheetName, keyValue, rowData) {
   } else {
     sheet.appendRow(rowData);
   }
+}
+
+// ── REMINDER EMAILS ─────────────────────────────────────
+function sendReminders() {
+  // Called by time-driven trigger — configurable interval via REMINDER_DAYS Script Property
+  // To set up: Deploy → Triggers → New → sendReminders → Time-driven → Hourly/ Daily
+  // REMINDER_DAYS controls how many days of inactivity triggers an email (default: 7)
+  const days    = getReminderDays();
+  const cutoff  = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const ss      = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const users   = readSheet(ss, SHEET_USERS);
+  const preds   = readSheet(ss, SHEET_PREDS);
+
+  // Build map of userId → last update time
+  const lastUpdate = {};
+  preds.slice(1).forEach(r => {
+    if (!r[0] || !r[4]) return;
+    const uid = r[0];
+    const ts  = new Date(r[4]);
+    if (!lastUpdate[uid] || ts > lastUpdate[uid]) lastUpdate[uid] = ts;
+  });
+
+  // Build email map from Users sheet
+  const userEmail = {};
+  users.slice(1).forEach(r => {
+    if (!r[0]) return;
+    // name field may contain email if set by manual login fallback
+    userEmail[r[0]] = r[2] || '';  // col 2 = email
+  });
+
+  let sent = 0;
+  users.slice(1).forEach(r => {
+    if (!r[0]) return;
+    const uid    = r[0];
+    const email  = userEmail[uid];
+    if (!email) return;
+    const last   = lastUpdate[uid];
+    if (last && last > cutoff) return;  // active recently
+    if (!last) {
+      // Never made a prediction — count as inactive
+      GmailApp.sendEmail(email, '⚽ WC 2026 Poule — Reminder to join!',
+        `Hi there!\n\nThe WC 2026 Poule is live and you haven't joined yet. Sign in, fill in your predictions, and compete for the prizes!\n\n👉 ${ScriptApp.getUrl()}\n\nGood luck!\n— Sam Media Poule Team`);
+      sent++;
+    } else if (last < cutoff) {
+      GmailApp.sendEmail(email, '⚽ WC 2026 Poule — Prediction reminder',
+        `Hi!\n\nYou haven't updated your predictions in ${days}+ days. The group stage kicks off June 11 — time to get your picks in!\n\n👉 ${ScriptApp.getUrl()}\n\nGood luck!\n— Sam Media Poule Team`);
+      sent++;
+    }
+  });
+  Logger.log(`Reminders sent: ${sent}`);
 }
 
 // ── SETUP (run once manually) ──────────────────────────

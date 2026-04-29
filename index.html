@@ -27,6 +27,7 @@
       <button class="nav-tab" data-tab="bonus">⭐ Bonus</button>
       <button class="nav-tab" data-tab="browse">👥 Browse</button>
       <button class="nav-tab" data-tab="admin" id="admin-tab" style="display:none">🔧 Admin</button>
+      <button class="nav-tab" data-tab="howto">📖 How to Play</button>
     </nav>
 
     <div class="header-right">
@@ -56,26 +57,56 @@
     <div class="section-header">
       <div>
         <div class="section-title"><span class="icon">🏆</span> Leaderboard</div>
-        <div class="section-sub">FIFA World Cup 2026 · <span id="lb-participant-count">—</span> participants</div>
+        <div class="section-sub">FIFA World Cup 2026 · <span id="lb-participant-count">— participants</span></div>
       </div>
       <div id="lb-deadline-badge"></div>
     </div>
 
     <div class="lb-prizes" id="prize-strip">
-      <div class="prize-card">
-        <div class="prize-medal">🥇</div>
-        <div class="prize-place">1st Place</div>
-        <div class="prize-value" id="prize-1">TBA</div>
+      <!-- 1st Place -->
+      <div class="prize-card rank-1">
+        <div class="prize-hero">
+          <div class="prize-hero-bg" id="ph-bg-1"></div>
+          <div class="prize-hero-shirt" id="ph-shirt-1">⚽</div>
+          <img class="prize-player-face" id="ph-face-1" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Ronaldo_%27CR7%27_in_2018.jpg/440px-Ronaldo_%27CR7%27_in_2018.jpg" alt="Player"
+               onerror="this.outerHTML='<div class=prize-player-face fallback id=ph-face-1>7</div>'" />
+        </div>
+        <div class="prize-body">
+          <div class="prize-crown">🥇</div>
+          <div class="prize-place">1st Place</div>
+          <div class="prize-value" id="prize-1">—</div>
+          <div class="prize-edit-hint" id="prize-hint-1">Admin can edit</div>
+        </div>
       </div>
-      <div class="prize-card">
-        <div class="prize-medal">🥈</div>
-        <div class="prize-place">2nd Place</div>
-        <div class="prize-value" id="prize-2">TBA</div>
+      <!-- 2nd Place -->
+      <div class="prize-card rank-2">
+        <div class="prize-hero">
+          <div class="prize-hero-bg" id="ph-bg-2"></div>
+          <div class="prize-hero-shirt" id="ph-shirt-2">⚽</div>
+          <img class="prize-player-face" id="ph-face-2" src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Lionel_Messi_2018.jpg/440px-Lionel_Messi_2018.jpg" alt="Player"
+               onerror="this.outerHTML='<div class=prize-player-face fallback id=ph-face-2>🔟</div>'" />
+        </div>
+        <div class="prize-body">
+          <div class="prize-crown">🥈</div>
+          <div class="prize-place">2nd Place</div>
+          <div class="prize-value" id="prize-2">—</div>
+          <div class="prize-edit-hint" id="prize-hint-2">Admin can edit</div>
+        </div>
       </div>
-      <div class="prize-card">
-        <div class="prize-medal">🥉</div>
-        <div class="prize-place">3rd Place</div>
-        <div class="prize-value" id="prize-3">TBA</div>
+      <!-- 3rd Place -->
+      <div class="prize-card rank-3">
+        <div class="prize-hero">
+          <div class="prize-hero-bg" id="ph-bg-3"></div>
+          <div class="prize-hero-shirt" id="ph-shirt-3">⚽</div>
+          <img class="prize-player-face" id="ph-face-3" src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kylian_Mbapp%C3%A9_2018.jpg/440px-Kylian_Mbapp%C3%A9_2018.jpg" alt="Player"
+               onerror="this.outerHTML='<div class=prize-player-face fallback id=ph-face-3>💎</div>'" />
+        </div>
+        <div class="prize-body">
+          <div class="prize-crown">🥉</div>
+          <div class="prize-place">3rd Place</div>
+          <div class="prize-value" id="prize-3">—</div>
+          <div class="prize-edit-hint" id="prize-hint-3">Admin can edit</div>
+        </div>
       </div>
     </div>
 
@@ -207,6 +238,105 @@
     </div>
   </div>
 
+  <!-- HOW TO PLAY -->
+  <div class="view" id="view-howto">
+    <div class="section-header">
+      <div>
+        <div class="section-title"><span class="icon">📖</span> How to Play</div>
+        <div class="section-sub">Everything you need to know about the WC 2026 Poule</div>
+      </div>
+    </div>
+    <div class="howto-grid">
+      <div class="howto-card">
+        <div class="howto-icon">⚽</div>
+        <div class="howto-title">Group Stage</div>
+        <div class="howto-body">
+          <p>Predict the exact score for all <strong>48 group stage matches</strong>. You earn:</p>
+          <ul>
+            <li><strong>3 points</strong> — Exact score (e.g. 2-1)</li>
+            <li><strong>1 point</strong> — Correct result (W/D/L)</li>
+          </ul>
+          <p>Matches are locked round-by-round as they start. You can adjust predictions up until kick-off.</p>
+        </div>
+      </div>
+      <div class="howto-card">
+        <div class="howto-icon">🏆</div>
+        <div class="howto-title">Knockout Rounds</div>
+        <div class="howto-body">
+          <p>After group results are in, predict the full knockout bracket:</p>
+          <ul>
+            <li><strong>Round of 32</strong> — Pick the winner (+2 pts)</li>
+            <li><strong>Round of 16</strong> — Pick the winner (+3 pts)</li>
+            <li><strong>Quarter-Finals</strong> — Pick the winner (+4 pts)</li>
+            <li><strong>Semi-Finals</strong> — Pick the winner (+5 pts)</li>
+            <li><strong>3rd Place Match</strong> — Pick the winner (+3 pts)</li>
+            <li><strong>Final</strong> — Pick the winner (+8 pts)</li>
+          </ul>
+          <p>Winners cascade automatically — picking a Round of 32 winner auto-fills the Round of 16 slot.</p>
+        </div>
+      </div>
+      <div class="howto-card">
+        <div class="howto-icon">⭐</div>
+        <div class="howto-title">Bonus Questions</div>
+        <div class="howto-body">
+          <p>10 special predictions that can make or break your ranking:</p>
+          <ul>
+            <li>Tournament winner, runner-up</li>
+            <li>Golden Boot, Golden Ball, Golden Glove</li>
+            <li>Best Young Player</li>
+            <li>Total goals in tournament (within range)</li>
+            <li>First team to be eliminated</li>
+            <li>Red card in the Final</li>
+            <li>Top scoring team</li>
+          </ul>
+          <p>Points range from <strong>1 to 10</strong> per question — these can swing the leaderboard!</p>
+        </div>
+      </div>
+      <div class="howto-card">
+        <div class="howto-icon">🔒</div>
+        <div class="howto-title">Prediction Deadlines</div>
+        <div class="howto-body">
+          <p>Predictions are locked by round:</p>
+          <ul>
+            <li><strong>Group Stage</strong> — Locked at kick-off (June 11, 2026)</li>
+            <li><strong>Round of 32</strong> — June 28</li>
+            <li><strong>Round of 16</strong> — July 5</li>
+            <li><strong>Quarter-Finals</strong> — July 10</li>
+            <li><strong>Semi-Finals</strong> — July 14</li>
+            <li><strong>Final</strong> — July 19</li>
+          </ul>
+          <p>Once a round locks, you can no longer edit predictions for that round.</p>
+        </div>
+      </div>
+      <div class="howto-card">
+        <div class="howto-icon">📊</div>
+        <div class="howto-title">Scoring Overview</div>
+        <div class="howto-body">
+          <p>Maximum <strong>358 points</strong> available:</p>
+          <ul>
+            <li><strong>Group Stage</strong> — up to 216 pts (3 pts × 48 exact + 1 pt × 48 result)</li>
+            <li><strong>Knockout</strong> — up to 93 pts</li>
+            <li><strong>Bonus Questions</strong> — up to 49 pts</li>
+          </ul>
+          <p>Your score updates live after each match result is entered. Keep an eye on the leaderboard!</p>
+        </div>
+      </div>
+      <div class="howto-card">
+        <div class="howto-icon">🏅</div>
+        <div class="howto-title">Prizes</div>
+        <div class="howto-body">
+          <p>The top 3 players win:</p>
+          <ul>
+            <li><strong>🥇 1st Place</strong> — Prize TBA (set by admin)</li>
+            <li><strong>🥈 2nd Place</strong> — Prize TBA (set by admin)</li>
+            <li><strong>🥉 3rd Place</strong> — Prize TBA (set by admin)</li>
+          </ul>
+          <p>Prizes are configured by the admin and shown above the leaderboard. Good luck!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
 
 <!-- ── LOGIN MODAL ── -->
@@ -215,7 +345,7 @@
     <div class="modal-logo">
       <img src="assets/SAMMEDIA_white.svg" alt="Sam Media" onerror="this.style.display='none'" />
       <div class="modal-logo-text">⚽ WC 2026 Poule</div>
-      <div class="modal-logo-sub">Sam Media internal · 95 players</div>
+      <div class="modal-logo-sub" id="modal-player-count">Sam Media internal · players</div>
     </div>
 
     <!-- Google SSO block (shown when CLIENT_ID is configured) -->

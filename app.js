@@ -5,8 +5,7 @@
 // ══════════════════════════════════════════════════════
 const CONFIG = {
   BACKEND_URL:      'https://script.google.com/a/macros/sam-media.com/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',
-  ADMIN_PASSWORD:   'worldcup2026',
-  GOOGLE_CLIENT_ID: '978303214297-jrpmd7gbaick1s3mt539a67q3npep1e2.apps.googleusercontent.com',      // ← paste from Google Cloud Console
+  GOOGLE_CLIENT_ID: '978303214297-jrpmd7gbaick1s3mt539a67q3npep1e2.apps.googleusercontent.com',
 };
 
 
@@ -31,8 +30,10 @@ const S = {
   adminGroup:       'A',
   adminKoRound:     'r32',
   adminUnlocked:    false,
+  adminPw:          '',   // typed by admin, memory-only (never persisted)
   saveTimer:        null,
   backendOk:        false,
+  syncErrorShown:   false, // suppress repeat error toasts when backend is down
 };
 
 // ══════════════════════════════════════════════════════
@@ -125,6 +126,11 @@ async function fetchRemote() {
     S.results        = data.results      || {};
     S.config         = data.config       || S.config;
 
+    // Update modal player count
+    const count = S.allUsers.length;
+    const sub = document.getElementById('modal-player-count');
+    if (sub) sub.textContent = `Sam Media internal · ${count} ${count === 1 ? 'player' : 'players'}`;
+
     // Merge: our local predictions might be newer than server
     if (S.user) {
       const server = S.allPredictions[S.user.id] || {};
@@ -154,29 +160,35 @@ async function syncRemote() {
     form.append('ko',      JSON.stringify(S.koPredictions));
     const res = await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    S.syncErrorShown = false;
     setStatus('saved');
   } catch(e) {
     console.warn('Sync failed:', e.message);
     setStatus('error');
-    setTimeout(() => setStatus('idle'), 4000);  // auto-clear after 4 s
+    if (!S.syncErrorShown) {
+      S.syncErrorShown = true;
+      setTimeout(() => setStatus('idle'), 4000);
+    } else {
+      setTimeout(() => setStatus('idle'), 1200);
+    }
   }
 }
 
 async function syncRemoteConfig() {
-  if (!isBackendConfigured()) return;
+  if (!isBackendConfigured() || !S.adminPw) return;
   const form = new FormData();
   form.append('action',  'saveConfig');
   form.append('payload', JSON.stringify(S.config));
-  form.append('pw',      CONFIG.ADMIN_PASSWORD);
+  form.append('pw',      S.adminPw);
   await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
 }
 
 async function syncRemoteResults() {
-  if (!isBackendConfigured()) return;
+  if (!isBackendConfigured() || !S.adminPw) return;
   const form = new FormData();
   form.append('action',  'saveResults');
   form.append('payload', JSON.stringify(S.results));
-  form.append('pw',      CONFIG.ADMIN_PASSWORD);
+  form.append('pw',      S.adminPw);
   await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
 }
 
@@ -236,6 +248,7 @@ function renderActiveView() {
     case 'bonus':        renderBonus();        break;
     case 'browse':       renderBrowse();       break;
     case 'admin':        renderAdmin();        break;
+    case 'howto':        break;  // static content, no JS needed
   }
 }
 
@@ -346,10 +359,28 @@ function calcGroupStandings(groupId, userId) {
 //  LEADERBOARD VIEW
 // ══════════════════════════════════════════════════════
 function renderLeaderboard() {
-  // Prizes
+  // Prizes — set value + optional team background
+  const PRIZE_TEAMS = {
+    p1: { team: 'JOR', bg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Flag_of_Jordan.svg/640px-Flag_of_Jordan.svg.png' },
+    p2: { team: 'NED', bg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Flag_of_the_Netherlands.svg/640px-Flag_of_the_Netherlands.svg.png' },
+    p3: { team: 'IRN', bg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Flag_of_Iran.svg/640px-Flag_of_Iran.svg.png' },
+  };
   ['1','2','3'].forEach(n => {
+    const key = `p${n}`;
     const el = document.getElementById(`prize-${n}`);
-    if (el) el.textContent = S.config.prizes?.[`p${n}`] || 'TBA';
+    if (el) {
+      el.textContent = S.config.prizes?.[key] || '—';
+      el.classList.add('editable');
+    }
+    const bg  = document.getElementById(`ph-bg-${n}`);
+    const cfg = PRIZE_TEAMS[key];
+    if (bg && cfg) {
+      bg.style.backgroundImage    = `url('${cfg.bg}')`;
+      bg.style.backgroundColor    = '#0c1a0e';
+      bg.style.backgroundRepeat   = 'no-repeat';
+      bg.style.backgroundPosition = 'center';
+      bg.style.backgroundSize     = 'cover';
+    }
   });
 
   // Build ranked user list
@@ -370,7 +401,8 @@ function renderLeaderboard() {
 
   // Stats
   const totalParticipants = ranked.length;
-  document.getElementById('lb-participant-count').textContent = totalParticipants;
+  document.getElementById('lb-participant-count').textContent =
+    `${totalParticipants} ${totalParticipants === 1 ? 'participant' : 'participants'}`;
 
   const statsEl = document.getElementById('lb-stats');
   const maxScore = ranked[0]?.score.total || 0;
@@ -715,13 +747,24 @@ function fitBracket() {
   if (!wrap || !tree) return;
   // Reset transforms before measuring
   tree.style.transform = '';
-  wrap.style.height = '';
+  wrap.style.height    = '';
   const wrapW    = wrap.clientWidth;
   const naturalW = tree.scrollWidth;
   const scale    = Math.min(1, (wrapW - 4) / naturalW);
-  tree.style.transformOrigin = 'top left';
-  tree.style.transform       = `scale(${scale})`;
-  wrap.style.height          = `${tree.offsetHeight * scale}px`;
+
+  // Below 55% scale the bracket becomes unreadable — switch to horizontal scroll instead
+  if (scale < 0.55) {
+    tree.style.transform   = '';
+    wrap.style.overflowX   = 'auto';
+    wrap.style.height      = `${tree.offsetHeight}px`;
+    wrap.style.paddingBottom = '12px';
+  } else {
+    wrap.style.overflowX      = 'hidden';
+    wrap.style.paddingBottom  = '';
+    tree.style.transformOrigin = 'top left';
+    tree.style.transform       = `scale(${scale})`;
+    wrap.style.height          = `${tree.offsetHeight * scale}px`;
+  }
 }
 
 // Re-fit on window resize when knockout is visible
@@ -1017,7 +1060,7 @@ function viewUserPredictions(userId) {
   }).join('');
 
   detail.innerHTML = `
-  <div style="margin-bottom:32px">
+  <div style="margin-bottom:32px;scroll-margin-top:80px">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       ${avatarHtml(user, 40)}
       <div>
@@ -1042,6 +1085,7 @@ function viewUserPredictions(userId) {
       </table>
     </div>
   </div>`;
+  detail.firstElementChild?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function closeBrowseDetail() {
@@ -1057,21 +1101,43 @@ function showUserInBrowse(userId) {
 //  ADMIN VIEW
 // ══════════════════════════════════════════════════════
 function bindAdmin() {
-  document.getElementById('admin-login-btn')?.addEventListener('click', () => {
-    const pw = document.getElementById('admin-pw-input').value;
-    if (pw === CONFIG.ADMIN_PASSWORD) {
-      S.adminUnlocked = true;
-      document.getElementById('admin-gate-wrap').style.display = 'none';
-      document.getElementById('admin-content').style.display   = 'block';
-      renderAdminContent();
-    } else {
-      showToast('Incorrect password', 'error');
-    }
-  });
-
+  document.getElementById('admin-login-btn')?.addEventListener('click', unlockAdmin);
   document.getElementById('admin-pw-input')?.addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('admin-login-btn').click();
+    if (e.key === 'Enter') unlockAdmin();
   });
+}
+
+async function unlockAdmin() {
+  const btn = document.getElementById('admin-login-btn');
+  const pw  = document.getElementById('admin-pw-input').value;
+  if (!pw) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+
+  try {
+    if (!isBackendConfigured()) throw new Error('no-backend');
+    const form = new FormData();
+    form.append('action', 'checkAdmin');
+    form.append('pw', pw);
+    const res  = await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
+    const data = await res.json();
+    if (data.error) throw new Error('bad-password');
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = 'Unlock';
+    showToast(e.message === 'bad-password' ? 'Incorrect password' : 'Cannot reach backend', 'error');
+    return;
+  }
+
+  S.adminPw       = pw;
+  S.adminUnlocked = true;
+  btn.disabled    = false;
+  btn.textContent = 'Unlock';
+  document.getElementById('admin-gate-wrap').style.display = 'none';
+  document.getElementById('admin-content').style.display   = 'block';
+  document.getElementById('admin-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  renderAdminContent();
 }
 
 function renderAdmin() {
@@ -1526,7 +1592,8 @@ function esc(str) {
 }
 
 function avatarHtml(user, size = 28) {
-  const initials = (user.name || '?').split(' ').map(p => p[0]).slice(0,2).join('').toUpperCase();
+  const displayStr = user.nickname || user.name || '?';
+  const initials = displayStr.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
   return `<div class="avatar" style="background:${user.color};width:${size}px;height:${size}px;font-size:${Math.floor(size*0.4)}px">${initials}</div>`;
 }
 

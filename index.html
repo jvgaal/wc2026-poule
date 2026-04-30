@@ -67,16 +67,26 @@
       <div class="prize-card rank-1">
         <div class="prize-hero">
           <div class="prize-hero-bg" id="ph-bg-1"></div>
-          <img class="prize-player-full" id="ph-full-1"
-               src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Ronaldo_vs_Greece_2019.jpg/400px-Ronaldo_vs_Greece_2019.jpg"
-               alt="Ronaldo"
-               onerror="this.style.display='none'" />
-          <div class="prize-kit-badge" id="ph-kit-1">🇵🇹</div>
-          <div class="prize-player-face" id="ph-face-1"
-               style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Ronaldo_%27CR7%27_in_2018.jpg/200px-Ronaldo_%27CR7%27_in_2018.jpg'); background-size:cover; background-position:center"></div>
+          <div class="prize-player-silhouette" id="ph-sil-1">
+            <svg viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+              <!-- Trophy body -->
+              <ellipse cx="40" cy="20" rx="22" ry="8" fill="#FFD700" opacity="0.9"/>
+              <path d="M20 20 Q20 50 40 60 Q60 50 60 20 Z" fill="#FFD700"/>
+              <rect x="32" y="58" width="16" height="14" fill="#B8860B"/>
+              <rect x="22" y="70" width="36" height="8" rx="3" fill="#B8860B"/>
+              <rect x="14" y="76" width="52" height="6" rx="3" fill="#FFD700"/>
+              <!-- Handles -->
+              <path d="M20 22 Q8 22 8 35 Q8 45 20 40" fill="none" stroke="#B8860B" stroke-width="4"/>
+              <path d="M60 22 Q72 22 72 35 Q72 45 60 40" fill="none" stroke="#B8860B" stroke-width="4"/>
+              <!-- ★ star on trophy -->
+              <text x="40" y="40" text-anchor="middle" font-size="14" fill="#B8860B">★</text>
+            </svg>
+          </div>
+          <div class="prize-rank-glow"></div>
+          <div class="prize-kit-badge" id="ph-kit-1">🥇</div>
         </div>
         <div class="prize-body">
-          <div class="prize-crown">🥇</div>
+          <div class="prize-crown">🏆</div>
           <div class="prize-place">1st Place</div>
           <div class="prize-value" id="prize-1">—</div>
           <div class="prize-edit-hint" id="prize-hint-1">Admin can edit</div>
@@ -86,13 +96,18 @@
       <div class="prize-card rank-2">
         <div class="prize-hero">
           <div class="prize-hero-bg" id="ph-bg-2"></div>
-          <img class="prize-player-full" id="ph-full-2"
-               src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Lionel_Messi_2018.jpg/400px-Lionel_Messi_2018.jpg"
-               alt="Messi"
-               onerror="this.style.display='none'" />
-          <div class="prize-kit-badge" id="ph-kit-2">🇦🇷</div>
-          <div class="prize-player-face" id="ph-face-2"
-               style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Lionel_Messi_2018.jpg/200px-Lionel_Messi_2018.jpg'); background-size:cover; background-position:center"></div>
+          <div class="prize-player-silhouette" id="ph-sil-2">
+            <svg viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+              <!-- Silver medal -->
+              <circle cx="40" cy="35" r="26" fill="#C0C0C0"/>
+              <circle cx="40" cy="35" r="20" fill="#E8E8E8"/>
+              <text x="40" y="30" text-anchor="middle" font-size="10" fill="#888" font-weight="bold">2</text>
+              <path d="M25 60 L40 55 L55 60 L52 95 L40 100 L28 95 Z" fill="#C0C0C0"/>
+              <rect x="30" y="95" width="20" height="10" rx="2" fill="#A0A0A0"/>
+              <rect x="22" y="103" width="36" height="6" rx="3" fill="#C0C0C0"/>
+            </svg>
+          </div>
+          <div class="prize-kit-badge" id="ph-kit-2">🥈</div>
         </div>
         <div class="prize-body">
           <div class="prize-crown">🥈</div>
@@ -105,13 +120,18 @@
       <div class="prize-card rank-3">
         <div class="prize-hero">
           <div class="prize-hero-bg" id="ph-bg-3"></div>
-          <img class="prize-player-full" id="ph-full-3"
-               src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Kylian_Mbapp%C3%A9_against_South_Korea_2018.jpg/400px-Kylian_Mbapp%C3%A9_against_South_Korea_2018.jpg"
-               alt="Mbappé"
-               onerror="this.style.display='none'" />
-          <div class="prize-kit-badge" id="ph-kit-3">🇫🇷</div>
-          <div class="prize-player-face" id="ph-face-3"
-               style="background-image:url('https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Kylian_Mbapp%C3%A9_2018.jpg/200px-Kylian_Mbapp%C3%A9_2018.jpg'); background-size:cover; background-position:center"></div>
+          <div class="prize-player-silhouette" id="ph-sil-3">
+            <svg viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+              <!-- Bronze medal -->
+              <circle cx="40" cy="35" r="26" fill="#CD7F32"/>
+              <circle cx="40" cy="35" r="20" fill="#E8A860"/>
+              <text x="40" y="30" text-anchor="middle" font-size="10" fill="#6B3E11" font-weight="bold">3</text>
+              <path d="M25 60 L40 55 L55 60 L52 95 L40 100 L28 95 Z" fill="#CD7F32"/>
+              <rect x="30" y="95" width="20" height="10" rx="2" fill="#A0522D"/>
+              <rect x="22" y="103" width="36" height="6" rx="3" fill="#CD7F32"/>
+            </svg>
+          </div>
+          <div class="prize-kit-badge" id="ph-kit-3">🥉</div>
         </div>
         <div class="prize-body">
           <div class="prize-crown">🥉</div>

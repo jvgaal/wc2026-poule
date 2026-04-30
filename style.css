@@ -430,8 +430,8 @@ body::after {
 
 .prize-card:hover { border-color: var(--border-hi); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.6); }
 
-.prize-card.rank-1 { border-color: rgba(240,180,41,0.4); }
-.prize-card.rank-2 { border-color: rgba(158,179,194,0.4); }
+.prize-card.rank-1 { border-color: rgba(255,215,0,0.4); }
+.prize-card.rank-2 { border-color: rgba(192,192,192,0.4); }
 .prize-card.rank-3 { border-color: rgba(205,127,50,0.4); }
 
 .prize-hero {
@@ -448,28 +448,59 @@ body::after {
   inset: 0;
   background-size: cover;
   background-position: center;
-  filter: brightness(0.45) saturate(0.8);
 }
 
-.prize-hero-shirt {
-  position: absolute;
-  inset: 0;
+.prize-card.rank-1 .prize-hero-bg {
+  background: linear-gradient(135deg, #1a0a00 0%, #4a1500 30%, #8B0000 60%, #DAA520 100%);
+}
+.prize-card.rank-2 .prize-hero-bg {
+  background: linear-gradient(135deg, #0a0a12 0%, #1a1a2e 40%, #4a4a6a 70%, #8a8aaa 100%);
+}
+.prize-card.rank-3 .prize-hero-bg {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a0f00 40%, #3d2200 60%, #6b3e00 100%);
+}
+
+.prize-player-silhouette {
+  position: relative;
+  z-index: 2;
+  width: 90px;
+  height: 110px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 72px;
-  filter: brightness(0.6);
+  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.7));
 }
 
-.prize-player-face {
-  position: relative;
-  z-index: 1;
-  width: 80px;
-  height: 80px;
+.prize-player-silhouette svg {
+  width: 100%;
+  height: 100%;
+}
+
+.prize-rank-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  border: 3px solid rgba(255,255,255,0.6);
-  object-fit: cover;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+  background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 70%);
+  z-index: 1;
+}
+.rank-2 .prize-rank-glow {
+  background: radial-gradient(circle, rgba(192,192,192,0.12) 0%, transparent 70%);
+}
+.rank-3 .prize-rank-glow {
+  background: radial-gradient(circle, rgba(205,127,50,0.12) 0%, transparent 70%);
+}
+
+.prize-kit-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 32px;
+  z-index: 5;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.8));
 }
 
 .prize-player-face.fallback {

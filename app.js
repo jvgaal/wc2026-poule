@@ -1160,6 +1160,7 @@ function renderAdminContent() {
   renderAdminResultGrid(S.adminGroup);
   renderAdminKoResultGrid(S.adminKoRound);
   renderPrizeInputs();
+  updateHowtoPrizes();
 
   document.getElementById('save-prizes-btn')?.addEventListener('click', savePrizes);
   document.getElementById('admin-export-btn')?.addEventListener('click', exportCSV);
@@ -1301,7 +1302,18 @@ function savePrizes() {
   };
   saveLocal();
   syncRemoteConfig();
+  updateHowtoPrizes();
   showToast('Prizes saved!', 'success');
+}
+
+function updateHowtoPrizes() {
+  ['1','2','3'].forEach(n => {
+    const el = document.getElementById(`howto-prize-${n}`);
+    if (el) {
+      const val = S.config.prizes?.[`p${n}`] || '';
+      el.textContent = val || 'Prize TBA (set by admin)';
+    }
+  });
 }
 
 function exportCSV() {

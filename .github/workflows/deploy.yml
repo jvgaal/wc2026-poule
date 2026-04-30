@@ -27,3 +27,4 @@ jobs:
           projectName: sam-wc2026
           directory: .
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: main

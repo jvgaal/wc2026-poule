@@ -177,20 +177,22 @@ async function syncRemote() {
 
 async function syncRemoteConfig() {
   if (!isBackendConfigured() || !S.adminPw) return;
-  const form = new FormData();
-  form.append('action',  'saveConfig');
-  form.append('payload', JSON.stringify(S.config));
-  form.append('pw',      S.adminPw);
-  await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
+  const qs = new URLSearchParams({
+    action:  'saveConfig',
+    payload: JSON.stringify({ locked: S.config.locked, prizes: S.config.prizes }),
+    pw:      S.adminPw,
+  }).toString();
+  await fetch(`${CONFIG.BACKEND_URL}?${qs}`, { redirect: 'follow' });
 }
 
 async function syncRemoteResults() {
   if (!isBackendConfigured() || !S.adminPw) return;
-  const form = new FormData();
-  form.append('action',  'saveResults');
-  form.append('payload', JSON.stringify(S.results));
-  form.append('pw',      S.adminPw);
-  await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
+  const qs = new URLSearchParams({
+    action:  'saveResults',
+    payload: JSON.stringify(S.results),
+    pw:      S.adminPw,
+  }).toString();
+  await fetch(`${CONFIG.BACKEND_URL}?${qs}`, { redirect: 'follow' });
 }
 
 async function syncRemoteConfig() {

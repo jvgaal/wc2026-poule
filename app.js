@@ -4,7 +4,7 @@
 //  CONFIG  —  update BACKEND_URL after deploying Apps Script
 // ══════════════════════════════════════════════════════
 const CONFIG = {
-  BACKEND_URL:      'https://script.google.com/a/macros/sam-media.com/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',
+  BACKEND_URL:      'https://script.google.com/macros/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',
   GOOGLE_CLIENT_ID: '978303214297-jrpmd7gbaick1s3mt539a67q3npep1e2.apps.googleusercontent.com',
 };
 
@@ -189,6 +189,15 @@ async function syncRemoteResults() {
   const form = new FormData();
   form.append('action',  'saveResults');
   form.append('payload', JSON.stringify(S.results));
+  form.append('pw',      S.adminPw);
+  await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
+}
+
+async function syncRemoteConfig() {
+  if (!isBackendConfigured() || !S.adminPw) return;
+  const form = new FormData();
+  form.append('action',  'saveConfig');
+  form.append('payload',  JSON.stringify({ locked: S.config.locked, prizes: S.config.prizes }));
   form.append('pw',      S.adminPw);
   await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
 }
@@ -1613,3 +1622,185 @@ function renderLoginPrompt(containerId) {
 function renderLoginPromptInView(containerId) {
   renderLoginPrompt(containerId);
 }
+
+// ══════════════════════════════════════════════════════
+//  LIVE SCORES — API-Football integration
+// ══════════════════════════════════════════════════════
+const LIVE = {
+  API_KEY:    '',          // Add your RapidAPI key here
+  RAPID_HOST: 'api-football1.p.rapidapi.com',
+  POLL_MS:    60000,       // Poll every 60s
+  interval:   null,
+  active:     false,
+  demoMode:   false,
+
+  async fetch(path, queryParams = {}) {
+    if (!this.API_KEY) return null;
+    const qs = new URLSearchParams(queryParams).toString();
+    const url = `https://${this.RAPID_HOST}${path}${qs ? '?' + qs : ''}`;
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'x-rapidapi-key':  this.API_KEY,
+          'x-rapidapi-host': this.RAPID_HOST,
+        },
+        redirect: 'follow',
+      });
+      return res.ok ? await res.json() : null;
+    } catch { return null; }
+  },
+
+  async getFixtures(fixtureId = null) {
+    const params = { league: '8', season: '2026' };
+    if (fixtureId) params.id = fixtureId;
+    const data = await this.fetch('/fixtures', params);
+    return data?.response || [];
+  },
+
+  async pollLiveScores() {
+    if (!this.active) return;
+    const fixtures = await this.getFixtures();
+    const now = Date.now();
+    let updated = false;
+
+    fixtures.forEach(fix => {
+      const { id, league, teams, goals, fixture: f } = fix;
+      const matchId = String(id);
+      const status = f?.status?.short || '';
+      const homeScore = goals?.home ?? null;
+      const awayScore = goals?.away ?? null;
+
+      // Only process if we have scores and match is final/timed
+      if (homeScore == null) return;
+
+      const wasEmpty = !S.results[matchId];
+      const changed  = S.results[matchId]?.home !== homeScore
+                    || S.results[matchId]?.away !== awayScore;
+
+      if (changed) {
+        S.results[matchId] = { home: homeScore, away: awayScore };
+        localStorage.setItem('wc26_results', JSON.stringify(S.results));
+        updated = true;
+      }
+
+      // Auto-lock: match is finished (FT, AET, PEN)
+      const isFinished = ['FT', 'AET', 'PEN', 'PEN'].includes(status);
+      if (isFinished && wasEmpty) {
+        const roundId = WC.matches.find(m => String(m.id) === matchId)?.round;
+        if (roundId) {
+          S.config.locked[roundId] = true;
+          syncRemoteConfig();
+        }
+      }
+    });
+
+    if (updated) {
+      renderLeaderboard();
+      renderBracket();
+      this.showLiveBadge(fixtures.filter(f => ['1H','2H','HT','ET','PEN'].includes(f.fixture?.status?.short)));
+    }
+  },
+
+  start() {
+    if (this.interval) return;
+    this.active = true;
+    this.pollLiveScores(); // immediate first poll
+    this.interval = setInterval(() => this.pollLiveScores(), this.POLL_MS);
+    console.log('[LiveScores] Started — polling every', this.POLL_MS / 1000, 's');
+  },
+
+  stop() {
+    this.active = false;
+    if (this.interval) { clearInterval(this.interval); this.interval = null; }
+    console.log('[LiveScores] Stopped');
+  },
+
+  showLiveBadge(liveMatches) {
+    const badge = document.getElementById('live-badge');
+    if (!badge) return;
+    if (liveMatches.length > 0) {
+      badge.style.display = 'flex';
+      badge.innerHTML = `🔴 LIVE — ${liveMatches.length} match${liveMatches.length > 1 ? 'es' : ''} in progress`;
+    } else {
+      badge.style.display = 'none';
+    }
+  },
+
+  init() {
+    if (!this.API_KEY) {
+      this.startDemo();
+      return;
+    }
+    // Auto-start during WC dates (June 11–July 19, 2026)
+    const now = new Date();
+    if (now >= new Date('2026-06-11') && now <= new Date('2026-07-20')) {
+      this.start();
+    }
+  },
+
+  // Map API fixture IDs to app match IDs
+  // API-Football uses numeric fixture IDs; app uses group+num like "A1", "r32_0", etc.
+  // Override this map with real IDs once you have them from the API
+  getAppMatchId(apiId) {
+    // For now, demo only — real integration needs a mapping table
+    return null;
+  },
+
+  startDemo() {
+    this.demoMode = true;
+    this.active = true;
+    // Demo: simulate 2 group matches and 1 KO match
+    const demoMatches = [
+      { id: 'A1', home: 1, away: 0, minute: 23, round: 'group' },
+      { id: 'B2', home: 0, away: 2, minute: 67, round: 'group' },
+    ];
+    const badge = document.getElementById('live-badge') || this.createLiveBadge();
+    badge.style.display = 'flex';
+    badge.innerHTML = '🟡 DEMO — Live scores simulation mode (no API key)';
+
+    this.interval = setInterval(() => {
+      if (!this.active) return;
+      demoMatches.forEach(m => {
+        if (Math.random() > 0.6) {
+          m.home = Math.min(m.home + (Math.random() > 0.5 ? 1 : 0), 5);
+          m.away = Math.min(m.away + (Math.random() > 0.5 ? 1 : 0), 4);
+          S.results[m.id] = { home: m.home, away: m.away };
+        }
+        m.minute = Math.min(m.minute + 1, 90);
+      });
+      localStorage.setItem('wc26_results', JSON.stringify(S.results));
+      renderLeaderboard();
+      if (document.getElementById('bracket-view')) renderBracket();
+      if (document.getElementById('predictions-view')) renderGroupView();
+      const m = demoMatches[0];
+      badge.innerHTML = `🟡 DEMO — ${m.home}-${m.away} (${m.minute}') · Click to stop`;
+    }, 5000);
+    console.log('[LiveScores] Demo mode started — 5s update interval');
+  },
+
+  createLiveBadge() {
+    const el = document.createElement('div');
+    el.id = 'live-badge';
+    el.style.cssText = 'display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#7DC242;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;border:1px solid #7DC242;cursor:pointer;';
+    el.onclick = () => this.stopDemo();
+    document.body.appendChild(el);
+    return el;
+  },
+
+  stopDemo() {
+    this.stop();
+    this.demoMode = false;
+    const badge = document.getElementById('live-badge');
+    if (badge) badge.remove();
+    console.log('[LiveScores] Demo stopped');
+  },
+
+  addApiKey(key) {
+    this.API_KEY = key;
+    if (this.demoMode) this.stopDemo();
+    this.start();
+  },
+};
+
+// Auto-init when app loads
+LIVE.init();

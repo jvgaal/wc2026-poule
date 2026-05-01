@@ -4,8 +4,12 @@
 //  CONFIG  —  update BACKEND_URL after deploying Apps Script
 // ══════════════════════════════════════════════════════
 const CONFIG = {
-  BACKEND_URL:      'https://script.google.com/macros/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',
-  GOOGLE_CLIENT_ID: '978303214297-jrpmd7gbaick1s3mt539a67q3npep1e2.apps.googleusercontent.com',
+  BACKEND_URL:        'https://script.google.com/macros/s/AKfycbxjuCp1CSdBBEIlV3q4i8iQpCYwQ8bWBgR0381drxz6mfHNXBed11I0GgyOQlMIQr7X/exec',
+  GOOGLE_CLIENT_ID:   '978303214297-jrpmd7gbaick1s3mt539a67q3npep1e2.apps.googleusercontent.com',
+  // Mirror admin writes (results / locks / prizes) to the family poule backend
+  // so entering scores once here updates BOTH poules. Paste the family Apps
+  // Script URL once it's deployed.
+  MIRROR_BACKEND_URL: 'https://script.google.com/macros/s/AKfycbxlwymQDc3pvcmOZ_pQYRo2snrtczq1VsD1xHipeJqcrUX2pbV5jZoCn3gQkQyk5OXl5w/exec',
 };
 
 
@@ -113,6 +117,16 @@ function isBackendConfigured() {
   return CONFIG.BACKEND_URL && !CONFIG.BACKEND_URL.startsWith('YOUR_');
 }
 
+function isMirrorConfigured() {
+  return CONFIG.MIRROR_BACKEND_URL && !CONFIG.MIRROR_BACKEND_URL.startsWith('YOUR_');
+}
+
+function mirrorAdminWrite(qs) {
+  if (!isMirrorConfigured() || !S.adminPw) return;
+  fetch(`${CONFIG.MIRROR_BACKEND_URL}?${qs}`, { redirect: 'follow' })
+    .catch(e => console.warn('Mirror write failed:', e.message));
+}
+
 async function fetchRemote() {
   if (!isBackendConfigured()) return;
   try {
@@ -193,15 +207,19 @@ async function syncRemoteResults() {
     pw:      S.adminPw,
   }).toString();
   await fetch(`${CONFIG.BACKEND_URL}?${qs}`, { redirect: 'follow' });
+  mirrorAdminWrite(qs);
 }
 
 async function syncRemoteConfig() {
   if (!isBackendConfigured() || !S.adminPw) return;
+  const payloadJson = JSON.stringify({ locked: S.config.locked, prizes: S.config.prizes });
   const form = new FormData();
   form.append('action',  'saveConfig');
-  form.append('payload',  JSON.stringify({ locked: S.config.locked, prizes: S.config.prizes }));
+  form.append('payload', payloadJson);
   form.append('pw',      S.adminPw);
   await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
+  const qs = new URLSearchParams({ action: 'saveConfig', payload: payloadJson, pw: S.adminPw }).toString();
+  mirrorAdminWrite(qs);
 }
 
 function debouncedSave() {
@@ -1741,15 +1759,9 @@ const LIVE = {
   },
 
   init() {
-    if (!this.API_KEY) {
-      this.startDemo();
-      return;
-    }
-    // Auto-start during WC dates (June 11–July 19, 2026)
-    const now = new Date();
-    if (now >= new Date('2026-06-11') && now <= new Date('2026-07-20')) {
-      this.start();
-    }
+    // Manual mode — scores are entered by admin in the Results panel
+    // No API polling, no demo mode
+    console.log('[LiveScores] Manual mode — use Admin > Results to enter scores');
   },
 
   // Map API fixture IDs to app match IDs

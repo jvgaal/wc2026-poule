@@ -218,7 +218,10 @@ async function syncRemoteConfig() {
   form.append('payload', payloadJson);
   form.append('pw',      S.adminPw);
   await fetch(CONFIG.BACKEND_URL, { method: 'POST', body: form, redirect: 'follow' });
-  const qs = new URLSearchParams({ action: 'saveConfig', payload: payloadJson, pw: S.adminPw }).toString();
+  // Mirror locks ONLY — prizes are intentionally site-specific (different prizes
+  // at work vs. home).
+  const mirrorPayload = JSON.stringify({ locked: S.config.locked });
+  const qs = new URLSearchParams({ action: 'saveConfig', payload: mirrorPayload, pw: S.adminPw }).toString();
   mirrorAdminWrite(qs);
 }
 

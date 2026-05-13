@@ -144,7 +144,7 @@ const WC = {
       id: "golden_ball", emoji: "🌟",
       question: "Who wins the Golden Ball (best player)?",
       type: "player", points: 5,
-      tip: "Can go to someone from a losing team — think playmakers, dribblers. Messi won it in 2022 despite Argentina winning.",
+      tip: "Can go to someone from a losing team — think playmakers, dribblers. Messi won it in 2014 despite Argentina losing the final to Germany.",
       links: [
         { label: "Player form – Sofascore", url: "https://www.sofascore.com" },
       ]
@@ -162,7 +162,7 @@ const WC = {
       id: "best_young", emoji: "🌱",
       question: "Who wins the Best Young Player award?",
       type: "player", points: 3,
-      tip: "Born on or after 1 Jan 2002. Hot picks: Yamal (Spain), Bellingham (Eng), Gakpo (NED), Reijnders (NED), Camavinga (FRA)",
+      tip: "Born on or after 1 Jan 2005 (FIFA: 21 or younger at start of tournament year). Hot pick: Yamal (Spain) — most other big names are too old.",
       links: [
         { label: "Young stars to watch – ESPN", url: "https://www.espn.com/soccer/story/_/id/47108758/2026-fifa-world-cup-format-tiebreakers-fixtures-schedule" },
       ]
